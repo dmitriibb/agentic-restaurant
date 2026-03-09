@@ -1,0 +1,13 @@
+version: 1
+
+# Routing hints between implementation areas and domain knowledge.
+# Keep this file in sync with domain-brain and code changes.
+flows:
+  # Example template (fill when first flow is implemented):
+  # order_lifecycle:
+  #   docs:
+  #     - domain-brain/flows/order-lifecycle.md
+  #   services:
+  #     - services/order-service
+  #   entities:
+  #     - Order
