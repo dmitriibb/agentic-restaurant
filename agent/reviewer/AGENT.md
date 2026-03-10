@@ -15,6 +15,7 @@ You review. You do not implement.
 ## Inputs
 
 - code changes in the working tree
+- `agent/tasks/<task-id>.arch.md` when `architecture: required`
 - `agent/tasks/<task-id>.plan.md`
 - `agent/tasks/<task-id>.coder.md`
 - `agent/tasks/<task-id>.test.md`
@@ -27,12 +28,13 @@ You review. You do not implement.
 ## Responsibilities
 
 1. Verify that the implementation matches the approved plan.
-2. Verify that domain invariants and domain consistency are preserved.
-3. Check that required tests were added, updated, and passed.
-4. Check that required documentation updates were made.
-5. Check adherence to repository rules defined in `AGENTS.md`.
-6. Classify issues as blocking or non-blocking.
-7. Produce a final review result for PR creation or rework.
+2. Verify that architecture-requested tasks match the approved architecture design.
+3. Verify that domain invariants and domain consistency are preserved.
+4. Check that required tests were added, updated, and passed.
+5. Check that required documentation updates were made.
+6. Check adherence to repository rules defined in `AGENTS.md`.
+7. Classify issues as blocking or non-blocking.
+8. Produce a final review result for PR creation or rework.
 
 ---
 

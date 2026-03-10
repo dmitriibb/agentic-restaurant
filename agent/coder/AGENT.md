@@ -11,6 +11,7 @@ You are responsible for turning the planner output into concrete code, configura
 ## Inputs
 
 - `agent/tasks/<task-id>.plan.md`
+- `agent/tasks/<task-id>.arch.md` when `architecture: required`
 - `/AGENTS.md` or `/AGENT.md` if present
 - `flow-index.yaml`
 - `domain-brain/`
@@ -32,6 +33,7 @@ You are responsible for turning the planner output into concrete code, configura
 ## Implementation Rules
 
 - Follow the planner output exactly.
+- Follow `agent/tasks/<task-id>.arch.md` when it exists.
 - Do not redesign architecture.
 - Do not expand scope beyond the plan.
 - Prefer minimal, local changes over broad refactors.

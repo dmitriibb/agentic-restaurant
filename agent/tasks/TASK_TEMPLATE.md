@@ -1,22 +1,56 @@
 # Task Template
 
-Title: <short task title>
-ID: <task-id>
-Status: queued
+```yaml
+id: task-001
+title: Short task title
+status: queued
+priority: medium
+type: feature
+architecture: not_requested
+created_at: YYYY-MM-DD
+requested_by: human
+areas:
+  - apps/<app-name>
+flows: []
+dependencies: []
+validation:
+  - <command-or-check>
+```
+
+`architecture` must stay `not_requested` unless the user explicitly asked for architecture or design work.
+
+## Summary
+
+One short paragraph describing the desired outcome.
 
 ## Requirements
 
 - <requirement 1>
 - <requirement 2>
 
+## Acceptance Criteria
+
+- <observable outcome 1>
+- <observable outcome 2>
+
 ## Constraints
 
-- Follow AGENTS.md rules
-- Update domain knowledge files if business logic changes
-- Include tests for behavior changes
+- Follow `AGENTS.md` rules
+- Keep changes scoped to the task
+- Update domain knowledge files when concrete business logic changes
+- Add or update tests for behavior changes
 
 ## Context
 
 - Related files:
+- Related docs:
 - Related flows:
-- Notes:
+- Risks or dependencies:
+
+## Out of Scope
+
+- <explicit non-goal>
+
+## Notes for Agents
+
+- <handoff note or implementation hint>

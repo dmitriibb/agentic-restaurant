@@ -1,13 +1,16 @@
 version: 1
 
-# Routing hints between implementation areas and domain knowledge.
+# Routing hints between implementation paths and domain knowledge.
+# This repository is a generic foundation, so flows may remain empty
+# until the first concrete project flow is implemented.
 # Keep this file in sync with domain-brain and code changes.
 flows:
-  # Example template (fill when first flow is implemented):
+  # Example template (fill when the first concrete flow is implemented):
   # order_lifecycle:
   #   docs:
   #     - domain-brain/flows/order-lifecycle.md
-  #   services:
-  #     - services/order-service
+  #   paths:
+  #     - apps/api/src/modules/orders
+  #     - apps/web/src/features/orders
   #   entities:
   #     - Order

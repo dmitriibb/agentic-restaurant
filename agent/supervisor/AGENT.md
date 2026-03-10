@@ -17,14 +17,15 @@ You route work to the correct agents, enforce state transitions, and decide whet
 - existing task artifacts for retries
 - `/AGENTS.md` or `/AGENT.md` if present
 - repository state
-- outputs produced by architect, planner, coder, tester, and reviewer
+- outputs produced by planner, coder, tester, and reviewer
+- optional output produced by architect when the task explicitly requests architecture/design work
 
 ---
 
 ## Responsibilities
 
 1. Detect new tasks and select the next task to process.
-2. Decide whether the task requires architect review before planning.
+2. Determine whether the task explicitly requests architecture/design work.
 3. Trigger agents in the correct order.
 4. Validate that each agent produced the required output artifact.
 5. Stop the pipeline on blocking failures.
@@ -35,12 +36,44 @@ You route work to the correct agents, enforce state transitions, and decide whet
 
 ---
 
+## Architect Gate
+
+- Run `agent/architect` only when the user explicitly requests architecture or design work in the task or prompt.
+- Treat task metadata `architecture: required` as the explicit signal to invoke `agent/architect`.
+- If `architecture` is not explicitly requested, continue directly to `planner`.
+- Do not send work to `agent/architect` based only on perceived complexity.
+
+---
+
+## Required Artifacts
+
+- task file: `agent/tasks/<task-id>.md`
+- optional architecture design: `agent/tasks/<task-id>.arch.md`
+- plan: `agent/tasks/<task-id>.plan.md`
+- implementation notes: `agent/tasks/<task-id>.coder.md`
+- test report: `agent/tasks/<task-id>.test.md`
+- review report: `agent/tasks/<task-id>.review.md`
+
+`agent/tasks/<task-id>.arch.md` is required only when `architecture: required`.
+
+---
+
 ## Pipeline Order
 
 Use this default execution flow:
 
 1. supervisor picks task
-2. architect if required
+2. planner
+3. coder
+4. tester
+5. reviewer
+6. PR handoff
+7. archive task
+
+Optional execution flow when `architecture: required`:
+
+1. supervisor picks task
+2. architect
 3. planner
 4. coder
 5. tester
@@ -52,17 +85,40 @@ Default flow:
 
 ```text
 Task
- ↓
-Architect (if needed)
- ↓
+  |
+Supervisor
+  |
 Planner
- ↓
+  |
 Coder
- ↓
+  |
 Tester
- ↓
+  |
 Reviewer
- ↓
+  |
 PR handoff
- ↓
+  |
 Done archive
+```
+
+Optional flow:
+
+```text
+Task
+  |
+Supervisor
+  |
+Architect
+  |
+Planner
+  |
+Coder
+  |
+Tester
+  |
+Reviewer
+  |
+PR handoff
+  |
+Done archive
+```

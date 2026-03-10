@@ -9,7 +9,14 @@ pipeline:
   - pull_request
   - done
 
+optional_stages:
+  architect:
+    position: before_planner
+    when: task metadata explicitly sets architecture to required or the user explicitly requests architecture/design work
+
 handoff_artifacts:
+  task: agent/tasks/<task-id>.md
+  architecture_design: agent/tasks/<task-id>.arch.md
   plan: agent/tasks/<task-id>.plan.md
   coder_notes: agent/tasks/<task-id>.coder.md
   test_report: agent/tasks/<task-id>.test.md
