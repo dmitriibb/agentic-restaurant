@@ -1,0 +1,154 @@
+:root {
+  --bg: radial-gradient(circle at 0% 0%, #f4f2df 0%, #efe8c8 45%, #e8ddaf 100%);
+  --surface: #ffffffdb;
+  --line: #d9ca97;
+  --text: #1f2327;
+  --accent: #115749;
+  --accent-strong: #0f4a3f;
+  --shadow: 0 18px 32px -24px rgba(47, 43, 26, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 2.5rem;
+  display: grid;
+  gap: 1.2rem;
+}
+
+.hero {
+  border: 1px solid var(--line);
+  background: linear-gradient(155deg, #fff6d5 0%, #f5edcf 100%);
+  box-shadow: var(--shadow);
+  border-radius: 22px;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: #6a674d;
+}
+
+h1 {
+  margin: 0.35rem 0 0.15rem;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.nav-links a {
+  color: var(--accent);
+  border: 1px solid var(--line);
+  background: #fffdf6;
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.nav-links a:hover {
+  background: #fff2b8;
+  color: var(--accent-strong);
+}
+
+.layout-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.surface-card {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+}
+
+.surface-card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+}
+
+.surface-card p {
+  margin: 0;
+  line-height: 1.42;
+}
+
+.service-grid {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+
+.service-grid div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.service-grid span {
+  font-size: 0.9rem;
+  color: #45483f;
+  word-break: break-all;
+}
+
+@media (max-width: 900px) {
+  .layout-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .service-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .app-shell {
+    padding-inline: 0.9rem;
+  }
+
+  .hero {
+    border-radius: 16px;
+    padding: 1.05rem;
+  }
+
+  .layout-grid,
+  .service-grid {
+    grid-template-columns: 1fr;
+  }
+}

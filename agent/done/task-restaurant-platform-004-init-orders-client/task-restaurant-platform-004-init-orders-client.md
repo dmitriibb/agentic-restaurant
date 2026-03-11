@@ -3,7 +3,7 @@
 ```yaml
 id: task-restaurant-platform-004-init-orders-client
 title: Initialize orders-client and verify local startup
-status: queued
+status: done
 priority: medium
 type: bootstrap
 architecture: not_requested
