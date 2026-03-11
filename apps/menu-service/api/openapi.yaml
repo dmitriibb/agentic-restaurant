@@ -1,0 +1,44 @@
+openapi: 3.0.3
+info:
+  title: Menu Service API
+  version: 0.0.1
+  description: Placeholder API-first contract for menu-service bootstrap.
+servers:
+  - url: http://localhost:8082
+paths:
+  /api/v1/menu-items:
+    get:
+      summary: List menu items
+      description: Placeholder endpoint for future menu retrieval implementation.
+      operationId: listMenuItems
+      responses:
+        '200':
+          description: Menu items list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuItemsResponse'
+components:
+  schemas:
+    MenuItem:
+      type: object
+      required: [id, name, description, price]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: double
+    MenuItemsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuItem'

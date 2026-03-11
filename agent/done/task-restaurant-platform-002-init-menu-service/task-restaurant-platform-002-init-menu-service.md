@@ -3,7 +3,7 @@
 ```yaml
 id: task-restaurant-platform-002-init-menu-service
 title: Initialize menu-service and verify database connectivity
-status: queued
+status: done
 priority: high
 type: bootstrap
 architecture: not_requested
@@ -65,3 +65,4 @@ Bootstrap `menu-service` as a runnable Java 21 backend service connected to Mong
 ## Notes for Agents
 
 - Leave clean extension points for Mongo repositories, generated APIs, and future auth filters.
+
