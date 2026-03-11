@@ -26,6 +26,21 @@ The plan must break the task into atomic steps and identify all required code, t
 4. Determine required implementation steps.
 5. Determine required tests.
 6. Determine required updates to domain documentation.
+7. Append planner activity to `agent/tasks/<task-id>.agents-audit.md`.
+
+---
+
+## Identity and Audit Rules
+
+- Your first visible chat message must identify the role explicitly: `Working as planner agent.`
+- Append an audit entry when you start planning, when you receive retry feedback, and when you finish and hand off to coder.
+- Audit entry format:
+
+```text
+YYYY-MM-DD HH:MM:SS
+planner
+<short action description>
+```
 
 ---
 

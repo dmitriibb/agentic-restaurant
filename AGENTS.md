@@ -11,6 +11,8 @@ Repository-level rules for all AI agents (single or multi-agent mode).
 5. Keep changes scoped to the task; avoid unrelated refactors.
 6. Preserve repository conventions and existing project structure.
 7. This repository is a generic foundation. `domain-brain/` and `flow-index.yaml` may remain template-like until the first concrete project flow is introduced. When adapting this repo to a real product, seed project-specific domain knowledge before implementing business logic.
+8. In multi-agent execution, keep a per-task audit log at `agent/tasks/<task-id>.agents-audit.md` and append entries whenever an agent starts work, hands off work, retries work, blocks work, or completes its stage.
+9. The first chat message from each fresh agent must explicitly identify the role, for example: `Working as planner agent.`
 
 ## Multi-Agent Pipeline
 
@@ -59,6 +61,7 @@ Valid task statuses: `queued`, `in_progress`, `planning`, `implementing`, `testi
 
 For each task id, agents should produce:
 
+- execution audit log: `agent/tasks/<task-id>.agents-audit.md`
 - optional architecture design: `agent/tasks/<task-id>.arch.md`
 - plan: `agent/tasks/<task-id>.plan.md`
 - implementation notes: `agent/tasks/<task-id>.coder.md`
@@ -70,6 +73,44 @@ When architecture is not explicitly requested, `agent/tasks/<task-id>.arch.md` i
 `PR handoff` is a pipeline stage, not a separate agent directory.
 
 When complete, supervisor moves the task file and all produced artifacts to `agent/done/<task-id>/`.
+
+## Agent Audit Log
+
+The per-task audit file is the visible execution history of the pipeline.
+
+- File name: `agent/tasks/<task-id>.agents-audit.md`
+- Owner: every agent appends to the same file for the current task
+- Purpose: show that the multi-agent setup is active and what each agent is doing
+
+Each audit event should use this format:
+
+```text
+YYYY-MM-DD HH:MM:SS
+<agent-name>
+<short action description>
+```
+
+Example:
+
+```text
+2026-03-11 15:10:20
+supervisor
+picked up task for analysis
+2026-03-11 15:10:30
+supervisor
+forwarded task to planner
+2026-03-11 15:10:30
+planner
+received task and started writing implementation plan
+```
+
+At minimum, agents must append audit entries when they:
+
+- start their stage
+- hand off to the next stage
+- receive retry feedback
+- block the task
+- finish their stage
 
 ## Feedback and Retry
 

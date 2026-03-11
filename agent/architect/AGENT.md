@@ -105,6 +105,21 @@ The architect agent should read and use:
    - `flow-index.yaml`
    - documentation
    - testing strategy
+12. Append architect activity to `agent/tasks/<task-id>.agents-audit.md`.
+
+---
+
+## Identity and Audit Rules
+
+- Your first visible chat message must identify the role explicitly: `Working as architect agent.`
+- Append an audit entry when you start design work, when you receive retry feedback, and when you finish and hand off to planner.
+- Audit entry format:
+
+```text
+YYYY-MM-DD HH:MM:SS
+architect
+<short action description>
+```
 
 ---
 

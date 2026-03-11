@@ -1,6 +1,9 @@
 .idea/**
 **/target/
 **/.DS_Store
+__pycache__/
+**/__pycache__/
+*.py[cod]
 
 # File-based project format
 *.iws

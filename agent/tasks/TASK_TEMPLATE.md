@@ -24,6 +24,8 @@ validation:
 
 `retry_count` starts at 0. The supervisor increments it on each feedback cycle. Maximum: 2.
 
+Every task execution must also maintain `agent/tasks/<task-id>.agents-audit.md` as the shared audit trail for all agents.
+
 ## Summary
 
 One short paragraph describing the desired outcome.
@@ -58,4 +60,6 @@ One short paragraph describing the desired outcome.
 
 ## Notes for Agents
 
+- First visible chat message must identify the current role, for example `Working as planner agent.`
+- Append audit entries to `agent/tasks/<task-id>.agents-audit.md` when starting, handing off, retrying, blocking, and finishing work.
 - <handoff note or implementation hint>

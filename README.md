@@ -35,6 +35,8 @@ The repository includes a multi-agent pipeline (see `agent/README.md` for full d
 - `agent/tasks/` - incoming task queue
 - `agent/done/` - completed task archive
 
+Each task also maintains a shared execution log at `agent/tasks/<task-id>.agents-audit.md` so you can see which agent picked up the task, what it did, and when it handed work to the next stage. Each fresh agent must identify itself in its first chat message with wording such as `Working as planner agent.`
+
 Default pipeline:
 
 `tasks -> supervisor -> planner -> coder -> tester -> reviewer -> PR handoff -> done`

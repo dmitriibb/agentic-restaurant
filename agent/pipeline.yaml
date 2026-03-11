@@ -16,11 +16,29 @@ optional_stages:
 
 handoff_artifacts:
   task: agent/tasks/<task-id>.md
+  audit_log: agent/tasks/<task-id>.agents-audit.md
   architecture_design: agent/tasks/<task-id>.arch.md
   plan: agent/tasks/<task-id>.plan.md
   coder_notes: agent/tasks/<task-id>.coder.md
   test_report: agent/tasks/<task-id>.test.md
   review_report: agent/tasks/<task-id>.review.md
+
+agent_identity:
+  first_chat_message_must_identify_role: true
+  example: Working as planner agent.
+
+audit_log:
+  file: agent/tasks/<task-id>.agents-audit.md
+  required_events:
+    - stage_started
+    - handoff
+    - retry_received
+    - blocked
+    - stage_completed
+  entry_format:
+    - YYYY-MM-DD HH:MM:SS
+    - <agent-name>
+    - <short action description>
 
 task_statuses:
   - queued

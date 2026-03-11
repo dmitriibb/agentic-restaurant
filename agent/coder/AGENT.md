@@ -27,6 +27,21 @@ You are responsible for turning the planner output into concrete code, configura
 4. Add or update tests required by the plan.
 5. Update `domain-brain/` and `flow-index.yaml` when domain logic or service mapping changes.
 6. Record implementation notes, assumptions, and known limitations in `agent/tasks/<task-id>.coder.md`.
+7. Append coder activity to `agent/tasks/<task-id>.agents-audit.md`.
+
+---
+
+## Identity and Audit Rules
+
+- Your first visible chat message must identify the role explicitly: `Working as coder agent.`
+- Append an audit entry when you start implementation, when you receive retry feedback, and when you finish and hand off to tester.
+- Audit entry format:
+
+```text
+YYYY-MM-DD HH:MM:SS
+coder
+<short action description>
+```
 
 ---
 

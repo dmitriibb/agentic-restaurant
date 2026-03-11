@@ -6,6 +6,8 @@ This folder contains the multi-agent workflow used by this repository.
 
 The pipeline is designed around **artifact-based handoff**: agents communicate through files on disk, not shared memory. This means each agent can run in a fresh context without carrying the full history of previous stages.
 
+Each task also has a shared execution log at `agent/tasks/<task-id>.agents-audit.md`. This file records when an agent starts, what it is doing, when it hands off, and when retries or blocks occur.
+
 ### How to run the pipeline in practice
 
 **Recommended approach: Supervisor + sub-agents**
@@ -19,6 +21,8 @@ Your main AI conversation acts as the supervisor. For each pipeline stage, the s
 The sub-agent does its work, writes its output artifact to `agent/tasks/`, and exits. The supervisor then inspects the output and decides whether to proceed to the next stage or route feedback.
 
 **Why this works:** Each sub-agent starts with a clean context. It reads its inputs from files, produces its output as a file. No single agent carries the entire pipeline history, so context never explodes.
+
+Each fresh sub-agent must also identify itself in its first chat message with explicit role wording such as `Working as coder agent.`
 
 **Example flow using OpenCode:**
 
@@ -44,6 +48,8 @@ Supervisor (main conversation):
 
 The files in `agent/tasks/` are the message bus. Artifacts are the inter-agent protocol. The pipeline works regardless of whether agents are sub-processes, separate conversations, API calls, or human-driven.
 
+The audit file is part of that protocol. It is the human-visible execution history for the task.
+
 ---
 
 ## Roles
@@ -57,6 +63,8 @@ The files in `agent/tasks/` are the message bus. Artifacts are the inter-agent p
 | Tester | `agent/tester/` | Validates implementation | `<task-id>.test.md` |
 | Reviewer | `agent/reviewer/` | Final quality gate | `<task-id>.review.md` |
 
+All stages append execution events to `<task-id>.agents-audit.md`.
+
 ---
 
 ## Queue
@@ -64,8 +72,27 @@ The files in `agent/tasks/` are the message bus. Artifacts are the inter-agent p
 - Put new tasks in `agent/tasks/`.
 - Use `agent/tasks/TASK_TEMPLATE.md` as the task format.
 - Store per-task artifacts in task-scoped files during execution.
+- Keep `agent/tasks/<task-id>.agents-audit.md` updated throughout execution.
 - Set `architecture: required` in the task metadata only when the user explicitly asked for architecture/design work.
 - On completion, move task and all artifacts to `agent/done/<task-id>/`.
+
+## Agent Audit Log
+
+Audit entry format:
+
+```text
+YYYY-MM-DD HH:MM:SS
+<agent-name>
+<short action description>
+```
+
+Minimum required events:
+
+- stage started
+- handoff to next stage
+- retry received
+- task blocked
+- stage completed
 
 ---
 
