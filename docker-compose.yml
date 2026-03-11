@@ -1,0 +1,59 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: restaurant-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: menu_db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - mongo-data:/data/db
+
+  users-db:
+    image: mysql:8.4
+    container_name: restaurant-users-db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: users_db
+      MYSQL_USER: users
+      MYSQL_PASSWORD: users
+      MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - users-db-data:/var/lib/mysql
+
+  orders-db:
+    image: mysql:8.4
+    container_name: restaurant-orders-db
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: orders_db
+      MYSQL_USER: orders
+      MYSQL_PASSWORD: orders
+      MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - orders-db-data:/var/lib/mysql
+
+volumes:
+  mongo-data:
+  users-db-data:
+  orders-db-data:

@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: users-service
+  datasource:
+    url: ${USERS_DB_URL:jdbc:mysql://${USERS_DB_HOST:localhost}:${USERS_DB_PORT:3306}/${USERS_DB_NAME:users_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${USERS_DB_USERNAME:users}
+    password: ${USERS_DB_PASSWORD:users}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
+  jackson:
+    time-zone: UTC
+
+server:
+  port: ${SERVER_PORT:8081}
+  shutdown: graceful
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+      group:
+        readiness:
+          include: readinessState,db
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  health:
+    readinessstate:
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  security:
+    internal-service-token: ${USERS_INTERNAL_SERVICE_TOKEN:local-dev-token}

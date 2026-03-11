@@ -1,0 +1,118 @@
+openapi: 3.0.3
+info:
+  title: Users Service API
+  version: 0.1.0
+  description: Bootstrap contract for authentication and token validation endpoints.
+servers:
+  - url: http://localhost:8081
+paths:
+  /api/v1/auth/login:
+    post:
+      summary: Placeholder login endpoint contract
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+  /api/v1/internal/auth/validate:
+    post:
+      summary: Placeholder internal token validation contract
+      operationId: validateToken
+      security:
+        - serviceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateTokenRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateTokenResponse'
+components:
+  securitySchemes:
+    serviceToken:
+      type: apiKey
+      in: header
+      name: X-Service-Token
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+          format: password
+    LoginResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresInSeconds
+        - user
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresInSeconds:
+          type: integer
+          format: int32
+          example: 3600
+        user:
+          $ref: '#/components/schemas/UserSummary'
+    ValidateTokenRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+    ValidateTokenResponse:
+      type: object
+      required:
+        - valid
+      properties:
+        valid:
+          type: boolean
+        userId:
+          type: integer
+          format: int64
+        login:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: string
+          format: date-time
+    UserSummary:
+      type: object
+      required:
+        - id
+        - login
+      properties:
+        id:
+          type: integer
+          format: int64
+        login:
+          type: string
