@@ -1,16 +1,40 @@
 version: 1
 
 # Routing hints between implementation paths and domain knowledge.
-# This repository is a generic foundation, so flows may remain empty
-# until the first concrete project flow is implemented.
-# Keep this file in sync with domain-brain and code changes.
+# Keep this file in sync with domain-brain and application structure.
 flows:
-  # Example template (fill when the first concrete flow is implemented):
-  # order_lifecycle:
-  #   docs:
-  #     - domain-brain/flows/order-lifecycle.md
-  #   paths:
-  #     - apps/api/src/modules/orders
-  #     - apps/web/src/features/orders
-  #   entities:
-  #     - Order
+  user_authentication:
+    docs:
+      - domain-brain/flows/user-authentication.md
+    paths:
+      - apps/users-service
+      - apps/orders-client/src/features/auth
+    entities:
+      - UserAccount
+      - AccessToken
+  menu_browsing:
+    docs:
+      - domain-brain/flows/menu-browsing.md
+    paths:
+      - apps/menu-service
+      - apps/orders-client/src/features/menu
+      - apps/orders-client/src/features/basket
+    entities:
+      - MenuItem
+      - Basket
+      - AccessToken
+  order_submission:
+    docs:
+      - domain-brain/flows/order-submission.md
+      - domain-brain/state-machines/order-lifecycle.md
+    paths:
+      - apps/orders-service
+      - apps/menu-service
+      - apps/users-service
+      - apps/orders-client/src/features/orders
+      - apps/orders-client/src/features/basket
+    entities:
+      - Order
+      - MenuItem
+      - UserAccount
+      - AccessToken
