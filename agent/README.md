@@ -78,21 +78,22 @@ All stages append execution events to `<task-id>.agents-audit.md`.
 
 ## Agent Audit Log
 
-Audit entry format:
+Audit entry format (two lines per entry):
 
 ```text
-YYYY-MM-DD HH:MM:SS
-<agent-name>
+YYYY-MM-DD HH:MM:SS - <agent-name>
 <short action description>
 ```
 
-Minimum required events:
+Every agent must log exactly two entries per normal stage execution:
 
-- stage started
-- handoff to next stage
-- retry received
-- task blocked
-- stage completed
+1. **Received**: logged immediately when the agent receives the task, before any processing.
+2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
+
+Additional entries are required when:
+
+- receiving retry feedback
+- blocking the task
 
 ---
 

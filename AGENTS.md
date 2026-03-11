@@ -82,35 +82,38 @@ The per-task audit file is the visible execution history of the pipeline.
 - Owner: every agent appends to the same file for the current task
 - Purpose: show that the multi-agent setup is active and what each agent is doing
 
-Each audit event should use this format:
+Each audit event should use this two-line format:
 
 ```text
-YYYY-MM-DD HH:MM:SS
-<agent-name>
+YYYY-MM-DD HH:MM:SS - <agent-name>
 <short action description>
 ```
+
+Every agent must log exactly two entries per normal stage execution:
+
+1. **Received**: logged immediately when the agent receives the task, before any processing.
+2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
+
+Additional entries are required when:
+
+- receiving retry feedback
+- blocking the task
 
 Example:
 
 ```text
-2026-03-11 15:10:20
-supervisor
-picked up task for analysis
-2026-03-11 15:10:30
-supervisor
-forwarded task to planner
-2026-03-11 15:10:30
-planner
-received task and started writing implementation plan
+2026-03-11 15:10:20 - supervisor
+received task, starting pipeline coordination
+
+2026-03-11 15:10:30 - supervisor
+completed initial routing, passing task to planner
+
+2026-03-11 15:10:30 - planner
+received task from supervisor, starting implementation plan
+
+2026-03-11 15:10:45 - planner
+completed implementation plan, passing task to coder
 ```
-
-At minimum, agents must append audit entries when they:
-
-- start their stage
-- hand off to the next stage
-- receive retry feedback
-- block the task
-- finish their stage
 
 ## Feedback and Retry
 

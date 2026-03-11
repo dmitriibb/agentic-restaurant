@@ -42,12 +42,14 @@ You review. You do not implement.
 ## Identity and Audit Rules
 
 - Your first visible chat message must identify the role explicitly: `Working as reviewer agent.`
-- Append an audit entry when you start review, when you request changes, and when you finish with `APPROVED` or `APPROVED_WITH_NOTES`.
-- Audit entry format:
+- Every agent must log exactly two entries per normal stage execution:
+  1. **Received**: logged immediately when the agent receives the task, before any processing.
+  2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
+- Additional entries are required when requesting changes.
+- Audit entry format (two lines per entry):
 
 ```text
-YYYY-MM-DD HH:MM:SS
-reviewer
+YYYY-MM-DD HH:MM:SS - reviewer
 <short action description>
 ```
 

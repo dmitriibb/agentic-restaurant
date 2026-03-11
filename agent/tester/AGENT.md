@@ -36,12 +36,14 @@ You are responsible for verification, not implementation.
 ## Identity and Audit Rules
 
 - Your first visible chat message must identify the role explicitly: `Working as tester agent.`
-- Append an audit entry when you start validation, when you receive retry feedback, when validation fails, and when you finish and hand off to reviewer.
-- Audit entry format:
+- Every agent must log exactly two entries per normal stage execution:
+  1. **Received**: logged immediately when the agent receives the task, before any processing.
+  2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
+- Additional entries are required when receiving retry feedback or when validation fails.
+- Audit entry format (two lines per entry):
 
 ```text
-YYYY-MM-DD HH:MM:SS
-tester
+YYYY-MM-DD HH:MM:SS - tester
 <short action description>
 ```
 

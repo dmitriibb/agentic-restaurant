@@ -29,16 +29,13 @@ agent_identity:
 
 audit_log:
   file: agent/tasks/<task-id>.agents-audit.md
-  required_events:
-    - stage_started
-    - handoff
+  required_entries_per_agent:
+    - received: logged immediately when the agent receives the task, before any processing
+    - completed: logged when the agent finishes work, describing what was done and who the task is passed to
+  additional_entries_when:
     - retry_received
     - blocked
-    - stage_completed
-  entry_format:
-    - YYYY-MM-DD HH:MM:SS
-    - <agent-name>
-    - <short action description>
+  entry_format: "YYYY-MM-DD HH:MM:SS - <agent-name>\n<short action description>"
 
 task_statuses:
   - queued

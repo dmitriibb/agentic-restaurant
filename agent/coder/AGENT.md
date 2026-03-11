@@ -34,12 +34,14 @@ You are responsible for turning the planner output into concrete code, configura
 ## Identity and Audit Rules
 
 - Your first visible chat message must identify the role explicitly: `Working as coder agent.`
-- Append an audit entry when you start implementation, when you receive retry feedback, and when you finish and hand off to tester.
-- Audit entry format:
+- Every agent must log exactly two entries per normal stage execution:
+  1. **Received**: logged immediately when the agent receives the task, before any processing.
+  2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
+- Additional entries are required when receiving retry feedback.
+- Audit entry format (two lines per entry):
 
 ```text
-YYYY-MM-DD HH:MM:SS
-coder
+YYYY-MM-DD HH:MM:SS - coder
 <short action description>
 ```
 
