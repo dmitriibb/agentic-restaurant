@@ -3,7 +3,7 @@
 ```yaml
 id: task-restaurant-platform-008-implement-orders-client
 title: Implement user flows in orders-client
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested
