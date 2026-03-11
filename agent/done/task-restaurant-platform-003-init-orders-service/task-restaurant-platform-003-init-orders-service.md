@@ -3,7 +3,7 @@
 ```yaml
 id: task-restaurant-platform-003-init-orders-service
 title: Initialize orders-service and verify database connectivity
-status: queued
+status: done
 priority: high
 type: bootstrap
 architecture: not_requested

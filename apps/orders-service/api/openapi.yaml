@@ -1,0 +1,72 @@
+openapi: 3.0.3
+info:
+  title: Orders Service API
+  version: 0.0.1
+  description: Placeholder API-first contract for orders-service bootstrap.
+servers:
+  - url: http://localhost:8083
+paths:
+  /api/v1/orders/{requestId}:
+    put:
+      summary: Submit order
+      description: Placeholder endpoint for future order submission implementation.
+      operationId: submitOrder
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitOrderRequest'
+      responses:
+        '200':
+          description: Order accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitOrderResponse'
+components:
+  schemas:
+    SubmitOrderRequest:
+      type: object
+      required: [userId, items]
+      properties:
+        userId:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLineRequest'
+    OrderLineRequest:
+      type: object
+      required: [itemId, quantity]
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+    SubmitOrderResponse:
+      type: object
+      required: [orderId, requestId, status, totalAmount]
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        requestId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        totalAmount:
+          type: number
+          format: double
