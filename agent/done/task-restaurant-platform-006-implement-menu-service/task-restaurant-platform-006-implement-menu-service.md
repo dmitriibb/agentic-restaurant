@@ -3,7 +3,7 @@
 ```yaml
 id: task-restaurant-platform-006-implement-menu-service
 title: Implement menu business logic in menu-service
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested

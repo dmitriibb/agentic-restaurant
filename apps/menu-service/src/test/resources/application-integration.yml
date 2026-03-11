@@ -2,3 +2,9 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/menu_db
+app:
+  security:
+    internal-service-token: integration-menu-internal-token
+  auth:
+    users-service-base-url: http://localhost:18081
+    users-service-token: integration-users-token

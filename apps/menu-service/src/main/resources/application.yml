@@ -33,3 +33,8 @@ springdoc:
 app:
   runtime:
     required-java-feature: ${JAVA_FEATURE_REQUIRED:21}
+  security:
+    internal-service-token: ${MENU_INTERNAL_SERVICE_TOKEN:menu-internal-token}
+  auth:
+    users-service-base-url: ${USERS_SERVICE_BASE_URL:http://localhost:8081}
+    users-service-token: ${MENU_TO_USERS_SERVICE_TOKEN:local-dev-token}

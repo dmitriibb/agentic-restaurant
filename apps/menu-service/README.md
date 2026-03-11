@@ -1,6 +1,6 @@
 # menu-service
 
-Bootstrap Java 21 Spring Boot service for menu catalog APIs.
+Java 21 Spring Boot service for menu browsing and internal menu item resolution APIs.
 
 ## Local Run
 
@@ -12,3 +12,8 @@ Bootstrap Java 21 Spring Boot service for menu catalog APIs.
 Base URL: `http://localhost:8082`
 Health readiness: `http://localhost:8082/actuator/health/readiness`
 Swagger UI: `http://localhost:8082/swagger-ui.html`
+
+## Implemented Endpoints
+
+- Public menu read: `GET /api/v1/menu-items` (requires bearer token)
+- Internal resolver: `POST /api/v1/internal/menu-items/resolve` (requires `X-Service-Token`)
