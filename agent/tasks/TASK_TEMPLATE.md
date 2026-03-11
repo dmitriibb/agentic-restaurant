@@ -7,6 +7,7 @@ status: queued
 priority: medium
 type: feature
 architecture: not_requested
+retry_count: 0
 created_at: YYYY-MM-DD
 requested_by: human
 areas:
@@ -18,6 +19,10 @@ validation:
 ```
 
 `architecture` must stay `not_requested` unless the user explicitly asked for architecture or design work.
+
+`status` valid values: `queued`, `in_progress`, `planning`, `implementing`, `testing`, `reviewing`, `changes_required`, `approved`, `pr_created`, `done`, `blocked`.
+
+`retry_count` starts at 0. The supervisor increments it on each feedback cycle. Maximum: 2.
 
 ## Summary
 

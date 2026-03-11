@@ -50,9 +50,12 @@ Task metadata should be structured and include, at minimum:
 - `priority`
 - `type`
 - `architecture`
+- `retry_count`
 - affected `areas`
 - affected `flows`
 - validation commands or checks
+
+Valid task statuses: `queued`, `in_progress`, `planning`, `implementing`, `testing`, `reviewing`, `changes_required`, `approved`, `pr_created`, `done`, `blocked`. The supervisor updates the status at each pipeline stage transition.
 
 For each task id, agents should produce:
 
@@ -67,3 +70,14 @@ When architecture is not explicitly requested, `agent/tasks/<task-id>.arch.md` i
 `PR handoff` is a pipeline stage, not a separate agent directory.
 
 When complete, supervisor moves the task file and all produced artifacts to `agent/done/<task-id>/`.
+
+## Feedback and Retry
+
+When the tester reports failures or the reviewer returns `CHANGES_REQUIRED`:
+
+1. The supervisor classifies the root cause.
+2. The supervisor routes feedback to the correct upstream agent (planner for plan issues, coder for implementation/test/domain issues).
+3. The pipeline resumes from that agent forward.
+4. Maximum 2 retry cycles per task. After 2 retries, status becomes `blocked` and requires human intervention.
+
+See `agent/supervisor/AGENT.md` for the full routing table and `agent/pipeline.yaml` for the machine-readable definition.

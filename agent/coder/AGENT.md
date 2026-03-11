@@ -45,8 +45,13 @@ You are responsible for turning the planner output into concrete code, configura
 
 ## Domain Rules
 
-- If business rules change, update relevant files in `domain-brain/`.
+Apply `skills/maintain-domain-brain/SKILL.md` on every task that touches business logic. Specifically:
+
+- If business rules change, update relevant files in `domain-brain/` (entities, flows, state-machines, invariants, edge-cases).
+- If new domain terms are introduced, add them to `domain-brain/glossary.md`.
 - If new services, modules, or flow ownership change, update `flow-index.yaml`.
+- If state transitions change, update or create the relevant file in `domain-brain/state-machines/`.
+- Domain documentation updates must be in the same commit as the code changes, never deferred.
 - Do not change domain behavior silently without documentation updates.
 
 ---

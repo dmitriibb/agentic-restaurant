@@ -21,3 +21,28 @@ handoff_artifacts:
   coder_notes: agent/tasks/<task-id>.coder.md
   test_report: agent/tasks/<task-id>.test.md
   review_report: agent/tasks/<task-id>.review.md
+
+task_statuses:
+  - queued
+  - in_progress
+  - planning
+  - implementing
+  - testing
+  - reviewing
+  - changes_required
+  - approved
+  - pr_created
+  - done
+  - blocked
+
+retry:
+  max_cycles: 2
+  on_failure: supervisor classifies root cause and routes to the correct upstream agent
+  on_max_retries_exceeded: status set to blocked, requires human intervention
+
+feedback_routing:
+  plan_issue: planner
+  implementation_issue: coder
+  test_gap: coder
+  domain_brain_missing: coder
+  architecture_issue: architect

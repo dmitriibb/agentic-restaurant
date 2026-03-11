@@ -18,16 +18,13 @@ This repository is used to:
 
 ## Agentic Workflow Foundation
 
-The initial structure follows patterns documented in [`agentic workflow patterns.md`](./agentic%20workflow%20patterns.md):
-
 - `domain-brain/` for distilled domain knowledge
 - `flow-index.yaml` for flow-to-code routing hints
 - `skills/` for repeatable agent workflows
-- `scripts/domain-sync.ts` for future domain sync automation
 
 ## Multi-Agent Workflow
 
-The repository includes a multi-agent scaffold based on [`milti-agent-pattenr.md`](./milti-agent-pattenr.md):
+The repository includes a multi-agent pipeline (see `agent/README.md` for full details):
 
 - `agent/supervisor/` - orchestrates task lifecycle
 - `agent/architect/` - optional architecture/design stage when explicitly requested by the user
