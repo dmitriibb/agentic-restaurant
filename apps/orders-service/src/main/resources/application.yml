@@ -35,3 +35,11 @@ management:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+app:
+  auth:
+    users-service-base-url: ${USERS_SERVICE_BASE_URL:http://localhost:8081}
+    users-service-token: ${ORDERS_TO_USERS_SERVICE_TOKEN:local-dev-token}
+  menu:
+    base-url: ${MENU_SERVICE_BASE_URL:http://localhost:8082}
+    service-token: ${ORDERS_TO_MENU_SERVICE_TOKEN:menu-internal-token}

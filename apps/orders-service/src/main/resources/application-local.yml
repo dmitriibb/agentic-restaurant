@@ -8,3 +8,11 @@ management:
   endpoint:
     health:
       show-details: always
+
+app:
+  auth:
+    users-service-base-url: http://localhost:8081
+    users-service-token: local-dev-token
+  menu:
+    base-url: http://localhost:8082
+    service-token: menu-internal-token

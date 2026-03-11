@@ -1,16 +1,20 @@
 openapi: 3.0.3
 info:
   title: Orders Service API
-  version: 0.0.1
-  description: Placeholder API-first contract for orders-service bootstrap.
+  version: 0.2.0
+  description: Order submission contract with idempotent request ids.
 servers:
   - url: http://localhost:8083
 paths:
   /api/v1/orders/{requestId}:
     put:
       summary: Submit order
-      description: Placeholder endpoint for future order submission implementation.
+      description: |
+        Submit an order with idempotent `requestId`.
+        Repeating the same request id for the same authenticated user returns the same order.
       operationId: submitOrder
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: requestId
@@ -31,7 +35,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubmitOrderResponse'
+        '400':
+          description: Invalid request body or unknown menu items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid bearer token
+        '403':
+          description: Request user id does not match authenticated user
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     SubmitOrderRequest:
       type: object
@@ -70,3 +89,9 @@ components:
         totalAmount:
           type: number
           format: double
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

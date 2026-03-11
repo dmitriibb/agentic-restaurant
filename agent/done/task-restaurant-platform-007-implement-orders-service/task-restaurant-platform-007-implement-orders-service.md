@@ -3,7 +3,7 @@
 ```yaml
 id: task-restaurant-platform-007-implement-orders-service
 title: Implement order business logic in orders-service
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested
