@@ -1,14 +1,14 @@
 openapi: 3.0.3
 info:
   title: Users Service API
-  version: 0.1.0
-  description: Bootstrap contract for authentication and token validation endpoints.
+  version: 0.2.0
+  description: Authentication and internal token validation contract.
 servers:
   - url: http://localhost:8081
 paths:
   /api/v1/auth/login:
     post:
-      summary: Placeholder login endpoint contract
+      summary: Authenticate with login and password
       operationId: login
       requestBody:
         required: true
@@ -23,9 +23,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials or inactive user
   /api/v1/internal/auth/validate:
     post:
-      summary: Placeholder internal token validation contract
+      summary: Validate JWT for internal services
       operationId: validateToken
       security:
         - serviceToken: []
@@ -42,6 +44,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidateTokenResponse'
+        '403':
+          description: Missing or invalid service credential
 components:
   securitySchemes:
     serviceToken:

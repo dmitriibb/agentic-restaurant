@@ -3,3 +3,8 @@ spring:
     url: jdbc:mysql://localhost:3306/users_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
     username: users
     password: users
+app:
+  security:
+    jwt-secret: integration-test-jwt-secret-key-0123456789
+    jwt-expiration-seconds: 3600
+    internal-service-token: integration-service-token

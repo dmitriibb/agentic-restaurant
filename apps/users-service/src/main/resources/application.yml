@@ -38,4 +38,6 @@ springdoc:
 
 app:
   security:
+    jwt-secret: ${USERS_JWT_SECRET:local-dev-super-secret-key-change-me-1234}
+    jwt-expiration-seconds: ${USERS_JWT_EXPIRATION_SECONDS:3600}
     internal-service-token: ${USERS_INTERNAL_SERVICE_TOKEN:local-dev-token}

@@ -15,5 +15,6 @@ Bootstrap service for authentication-related infrastructure in the restaurant pl
 
 ## Notes
 
-- The service currently bootstraps runtime, datasource, Liquibase, and OpenAPI contract structure only.
-- Login and token validation behavior are intentionally deferred to later tasks.
+- Predefined users are seeded by Liquibase for local development.
+- Login endpoint: `POST /api/v1/auth/login`
+- Internal validation endpoint: `POST /api/v1/internal/auth/validate` (requires `X-Service-Token`)

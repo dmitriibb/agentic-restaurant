@@ -1,0 +1,100 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-seed-users
+      author: codex
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM users
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1001
+              - column:
+                  name: login
+                  value: alex.customer
+              - column:
+                  name: password_hash
+                  value: "pbkdf2$120000$Vt2sVICql5X8phSpj+TFtA==$zGhNRkUe+9JlpXtt3mERuM1YZq1vim+c1kdh5BgcFlg="
+              - column:
+                  name: status
+                  value: ACTIVE
+              - column:
+                  name: roles
+                  value: CUSTOMER
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1002
+              - column:
+                  name: login
+                  value: nina.customer
+              - column:
+                  name: password_hash
+                  value: "pbkdf2$120000$OaYbtQ30SZ92k58Tn+mECw==$SnyJeNmHb5HS5/J/lhN1K0a6RfmSV5epKKZp7Z3BjXA="
+              - column:
+                  name: status
+                  value: ACTIVE
+              - column:
+                  name: roles
+                  value: CUSTOMER
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1003
+              - column:
+                  name: login
+                  value: sam.customer
+              - column:
+                  name: password_hash
+                  value: "pbkdf2$120000$qUvkdSf73PXiig0a5qJi6Q==$hWh1usn47Ib+Qz8QVRZfaTSe1HbqVE7IU1F/7nWZwyQ="
+              - column:
+                  name: status
+                  value: ACTIVE
+              - column:
+                  name: roles
+                  value: CUSTOMER
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1004
+              - column:
+                  name: login
+                  value: olga.manager
+              - column:
+                  name: password_hash
+                  value: "pbkdf2$120000$LWhY/Aj4Gt2AwpzInCd1XA==$MyES2fOw7LCT7aQUZYDuzJoOvogifTN5beGM7diCp4U="
+              - column:
+                  name: status
+                  value: ACTIVE
+              - column:
+                  name: roles
+                  value: CUSTOMER,MANAGER
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1005
+              - column:
+                  name: login
+                  value: disabled.user
+              - column:
+                  name: password_hash
+                  value: "pbkdf2$120000$T/lRArNHA4+oTQGX4JSDvg==$82p71Q8CW90HT2gi0Dy+3r5cyTdvNe8bKFvKMOOsw9s="
+              - column:
+                  name: status
+                  value: DISABLED
+              - column:
+                  name: roles
+                  value: CUSTOMER

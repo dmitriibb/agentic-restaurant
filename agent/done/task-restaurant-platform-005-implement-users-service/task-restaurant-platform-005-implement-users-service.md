@@ -3,7 +3,7 @@
 ```yaml
 id: task-restaurant-platform-005-implement-users-service
 title: Implement authentication business logic in users-service
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested
