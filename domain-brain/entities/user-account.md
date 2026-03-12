@@ -19,5 +19,5 @@ An authenticated platform user owned by `users-service`.
 
 ## Notes
 
-- The first version is seeded with five predefined users.
+- The first version is seeded with six predefined users (including `admin` for local development).
 - Passwords must never be stored or logged in plaintext.

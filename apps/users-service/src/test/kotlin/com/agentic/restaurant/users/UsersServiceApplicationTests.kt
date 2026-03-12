@@ -33,13 +33,13 @@ class UsersServiceApplicationTests {
     lateinit var userRepository: UserRepository
 
     @Test
-    fun `liquibase seeds five predefined users`() {
+    fun `liquibase seeds six predefined users`() {
         val usersCount = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM users",
             java.lang.Integer::class.java,
         )
 
-        assertThat(usersCount).isEqualTo(5)
+        assertThat(usersCount).isEqualTo(6)
     }
 
     @Test
@@ -57,6 +57,21 @@ class UsersServiceApplicationTests {
         @Suppress("UNCHECKED_CAST")
         val user = response.body?.get("user") as Map<String, Any>
         assertThat(user["login"]).isEqualTo("alex.customer")
+    }
+
+    @Test
+    fun `login endpoint authenticates admin default credentials`() {
+        val request = mapOf(
+            "login" to "admin",
+            "password" to "admin",
+        )
+
+        val response = restTemplate.postForEntity("/api/v1/auth/login", request, Map::class.java)
+
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+        @Suppress("UNCHECKED_CAST")
+        val user = response.body?.get("user") as Map<String, Any>
+        assertThat(user["login"]).isEqualTo("admin")
     }
 
     @Test

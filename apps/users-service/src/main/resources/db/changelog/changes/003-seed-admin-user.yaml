@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-seed-admin-user
+      author: codex
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM users WHERE login = 'admin'
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1006
+              - column:
+                  name: login
+                  value: admin
+              - column:
+                  name: password_hash
+                  value: "pbkdf2$120000$5gOEzHNXDFZQnT36eNbsyw==$RI/OYuNrjrWxX02FE9dgIFblF0DeH4HvDWwHSNuiGqM="
+              - column:
+                  name: status
+                  value: ACTIVE
+              - column:
+                  name: roles
+                  value: ADMIN

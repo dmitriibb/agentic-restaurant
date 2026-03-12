@@ -5,7 +5,7 @@ Bootstrap service for authentication-related infrastructure in the restaurant pl
 ## Local run
 
 1. Start local datastores with `docker compose up -d`.
-2. Run the service from `apps/users-service` with `mvn spring-boot:run -Dspring-boot.run.profiles=local`.
+2. Run the service from `apps/users-service` with `mvn spring-boot:run "-Dspring-boot.run.profiles=local"`.
 
 ## Local endpoints
 

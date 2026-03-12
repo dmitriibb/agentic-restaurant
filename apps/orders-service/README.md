@@ -9,7 +9,7 @@ Kotlin 21 Spring Boot service for order submission and persistence.
 2. Run tests:
    - `mvn test`
 3. Run the service:
-   - `mvn spring-boot:run -Dspring-boot.run.profiles=local`
+   - `mvn spring-boot:run "-Dspring-boot.run.profiles=local"`
 
 Default port: `8083`
 
