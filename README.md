@@ -1,53 +1,82 @@
 # agentic-restaurant
 
-Generic monorepo foundation for agentic development workflows.
+Agentic-first monorepo for building a restaurant platform with microservices.
 
-## Purpose
+This project now has a concrete product direction (restaurant operations) while keeping the original goal: use fully agentic development, iterate on multi-agent workflows, and experiment with different technologies per domain.
 
-This repository is used to:
+## Project Goals
 
-1. Explore and gain experience with agentic development approaches, patterns, and strategies.
-2. Refine a reusable workflow foundation that can be adapted to concrete products later.
-3. Gain hands-on experience with agent orchestration, structured tasking, and domain-aware development patterns.
+1. Build a real restaurant platform as a set of independently deployable services.
+2. Evolve a practical multi-agent delivery pipeline (planning, coding, testing, review, handoff).
+3. Use the product as a safe environment to compare stacks, patterns, and service boundaries.
 
-## Scope
+## Current State
 
-- This repository starts as a reusable workflow and knowledge scaffold.
-- Concrete application architecture and implementation will be added incrementally under `apps/`.
-- No product-specific business domain is defined at this stage.
+The repository currently contains 4 basic application services:
+
+| Service | Stack | Responsibility | Port |
+| --- | --- | --- | --- |
+| `users-service` | Kotlin + Spring Boot + MySQL | Login, JWT issuance, internal token validation | `8081` |
+| `menu-service` | Java + Spring Boot + MongoDB | Menu read API and internal menu item resolution | `8082` |
+| `orders-service` | Kotlin + Spring Boot + MySQL | Order submission, idempotency, order persistence | `8083` |
+| `orders-client` | React + Vite + Nginx | UI for sign-in, menu browsing, basket, and order submit | `80` |
+
+## Implemented Flows
+
+Current flows are captured in `flow-index.yaml` and documented in `domain-brain/`:
+
+- `user_authentication`
+- `menu_browsing`
+- `order_submission`
+
+## Authorization Model (Current)
+
+- End-user calls use `Authorization: Bearer <jwt>`.
+- Internal service calls use `X-Service-Token`.
+- `orders-service` also enforces request ownership (`token.userId` must match `request.userId`).
+
+## Planned Expansion
+
+Planned domains include:
+
+- production line / kitchen workflow
+- payments
+- inventory
+- reporting and analytics
+- additional supporting services as complexity grows
+
+As new domains are added, the repository will keep the same discipline:
+
+1. Add/extend domain knowledge in `domain-brain/`.
+2. Register flows and code paths in `flow-index.yaml`.
+3. Implement service/API changes with tests.
+4. Run through the multi-agent pipeline and task artifacts.
 
 ## Agentic Workflow Foundation
 
-- `domain-brain/` for distilled domain knowledge
-- `flow-index.yaml` for flow-to-code routing hints
-- `skills/` for repeatable agent workflows
+- `agent/` contains supervisor/planner/coder/tester/reviewer roles and task artifacts.
+- `domain-brain/` stores distilled product knowledge (entities, flows, invariants, edge cases).
+- `flow-index.yaml` maps flows to code areas for agents and contributors.
+- `skills/` stores reusable skill instructions.
 
-## Multi-Agent Workflow
+See `agent/README.md` and `AGENTS.md` for operational workflow rules.
 
-The repository includes a multi-agent pipeline (see `agent/README.md` for full details):
+## Quick Start
 
-- `agent/supervisor/` - orchestrates task lifecycle
-- `agent/architect/` - optional architecture/design stage when explicitly requested by the user
-- `agent/planner/` - converts tasks into executable plans
-- `agent/coder/` - implements code changes from plans
-- `agent/tester/` - validates with tests and checks
-- `agent/reviewer/` - performs automated review before PR
-- `agent/tasks/` - incoming task queue
-- `agent/done/` - completed task archive
+Prerequisites:
 
-Each task also maintains a shared execution log at `agent/tasks/<task-id>.agents-audit.md` so you can see which agent picked up the task, what it did, and when it handed work to the next stage. Each fresh agent must identify itself in its first chat message with wording such as `Working as planner agent.`
+- Docker + Docker Compose
+- Java 21 + Maven (for local non-container runs)
+- Node.js (for local `orders-client` development)
 
-Default pipeline:
+Run all services via Compose:
 
-`tasks -> supervisor -> planner -> coder -> tester -> reviewer -> PR handoff -> done`
+- Windows: `run.cmd up`
+- Linux/macOS: `./run.sh up`
 
-Optional pipeline:
+Then open:
 
-`tasks -> supervisor -> architect -> planner -> coder -> tester -> reviewer -> PR handoff -> done`
-
-## Current Repository Skeleton
-
-- `apps/` for concrete applications inside the monorepo
-- `tests/` for repository-level automated test suites
-- `domain-brain/` and `flow-index.yaml` stay generic until a concrete project is introduced
-- no product-specific architecture is defined yet
+- UI: `http://localhost`
+- Users Swagger: `http://localhost:8081/swagger-ui.html`
+- Menu Swagger: `http://localhost:8082/swagger-ui.html`
+- Orders Swagger: `http://localhost:8083/swagger-ui.html`
