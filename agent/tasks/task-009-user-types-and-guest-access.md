@@ -93,9 +93,26 @@ Extend the users-service to support three distinct client types: RegisteredUser 
 - Role-based access control changes beyond what exists
 - Multi-tenant support
 
+## Sub-Tasks
+
+This task is split into 7 sequential implementation sub-tasks. Execute in order (each depends on preceding tasks):
+
+| Order | Task ID | Title | Areas | Dependencies |
+|---|---|---|---|---|
+| A | `task-009-A-database-schema-changes` | Database schema changes for user types and applications | users-service | none |
+| B | `task-009-B-application-token-pool` | Application token pool endpoint | users-service | A |
+| C | `task-009-C-guest-user-creation` | Guest user creation endpoint | users-service | A, B |
+| D | `task-009-D-token-claim-validation-changes` | Token claims, validation response, and guest archival | users-service | A, B, C |
+| E | `task-009-E-backend-service-startup-auth` | Backend service startup auth and inter-service JWT | menu-service, orders-service | B, D |
+| F | `task-009-F-orders-client-guest-login` | orders-client guest login flow and app token management | orders-client | B, C, E |
+| G | `task-009-G-domain-documentation-updates` | Domain documentation updates for user types | domain-brain | A-F |
+
+Task files: `agent/tasks/task-009-{A..G}-*.md`
+
 ## Notes for Agents
 
 - First visible chat message must identify the current role
 - Append audit entries to `agent/tasks/task-009-user-types-and-guest-access.agents-audit.md`
-- This task will likely need to be split into multiple sub-tasks during planning
+- This task has been split into 7 sub-tasks (A through G). Execute them sequentially, one by one.
 - The architecture document provides the full design: `agent/tasks/task-009-user-types-and-guest-access.arch.md`
+- Each sub-task has its own detailed requirements, acceptance criteria, and context. Read the sub-task file before starting work.
