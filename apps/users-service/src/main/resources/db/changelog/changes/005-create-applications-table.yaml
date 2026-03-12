@@ -1,0 +1,112 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-create-applications-table
+      author: codex
+      changes:
+        - createTable:
+            tableName: applications
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: application_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: secret_hash
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: max_pool_size
+                  type: INT
+                  defaultValueNumeric: 30
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: users
+            baseColumnNames: application_id
+            referencedTableName: applications
+            referencedColumnNames: id
+            constraintName: fk_users_application_id
+  - changeSet:
+      id: 005-seed-applications
+      author: codex
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM applications
+      changes:
+        - insert:
+            tableName: applications
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1
+              - column:
+                  name: application_name
+                  value: orders-client
+              - column:
+                  name: secret_hash
+                  value: "pbkdf2$120000$evsNCScDwq5axizy5kyXdQ==$xPnU6EjAzTUunHMH8+jNeUQ3UAgtC7whmFBJAnTjE7Y="
+              - column:
+                  name: max_pool_size
+                  valueNumeric: 30
+              - column:
+                  name: status
+                  value: ACTIVE
+        - insert:
+            tableName: applications
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 2
+              - column:
+                  name: application_name
+                  value: menu-service
+              - column:
+                  name: secret_hash
+                  value: "pbkdf2$120000$VieKBIrtI4zmEoyXjGRo5w==$z1EHx51NvR9zb1VtV22TRF0NGMM0hcThxKAkkg46M4s="
+              - column:
+                  name: max_pool_size
+                  valueNumeric: 30
+              - column:
+                  name: status
+                  value: ACTIVE
+        - insert:
+            tableName: applications
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 3
+              - column:
+                  name: application_name
+                  value: orders-service
+              - column:
+                  name: secret_hash
+                  value: "pbkdf2$120000$L5ofYtAraKo1tHhU3BoIug==$+b6rWKTbv8n6Vn4kOAybo+oDrRdBJnfx7DxnfiOvvIw="
+              - column:
+                  name: max_pool_size
+                  valueNumeric: 30
+              - column:
+                  name: status
+                  value: ACTIVE

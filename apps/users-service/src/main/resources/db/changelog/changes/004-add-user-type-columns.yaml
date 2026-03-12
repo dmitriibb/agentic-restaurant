@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-user-type-columns
+      author: codex
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: client_type
+                  type: VARCHAR(32)
+                  defaultValue: REGISTERED_USER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: display_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: application_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: last_active_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+        - dropNotNullConstraint:
+            tableName: users
+            columnName: password_hash
+            columnDataType: VARCHAR(255)

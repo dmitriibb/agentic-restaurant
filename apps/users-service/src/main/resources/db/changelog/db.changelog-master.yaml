@@ -5,3 +5,9 @@ databaseChangeLog:
       file: db/changelog/changes/002-seed-users.yaml
   - include:
       file: db/changelog/changes/003-seed-admin-user.yaml
+  - include:
+      file: db/changelog/changes/004-add-user-type-columns.yaml
+  - include:
+      file: db/changelog/changes/005-create-applications-table.yaml
+  - include:
+      file: db/changelog/changes/006-cleanup-demo-seed-users.yaml

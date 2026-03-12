@@ -3,7 +3,7 @@
 ```yaml
 id: task-009-A-database-schema-changes
 title: Database schema changes for user types and applications
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested

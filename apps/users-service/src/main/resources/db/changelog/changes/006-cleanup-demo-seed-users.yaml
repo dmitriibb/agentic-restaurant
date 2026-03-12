@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-cleanup-demo-seed-users
+      author: codex
+      changes:
+        - delete:
+            tableName: users
+            where: id IN (1001, 1002, 1003, 1004, 1005)
+        - update:
+            tableName: users
+            where: id = 1006
+            columns:
+              - column:
+                  name: client_type
+                  value: REGISTERED_USER
+              - column:
+                  name: display_name
+                  value: admin

@@ -26,7 +26,7 @@ class AuthService(
         if (user.status != UserStatus.ACTIVE) {
             return null
         }
-        if (!passwordHasher.verify(password, user.passwordHash)) {
+        if (user.passwordHash == null || !passwordHasher.verify(password, user.passwordHash)) {
             return null
         }
 
