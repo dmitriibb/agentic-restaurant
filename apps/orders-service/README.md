@@ -5,7 +5,7 @@ Kotlin 21 Spring Boot service for order submission and persistence.
 ## Local Run
 
 1. Start local dependencies:
-   - `docker compose up -d --wait orders-db`
+   - `docker compose up -d --wait mysql`
 2. Run tests:
    - `mvn test`
 3. Run the service:

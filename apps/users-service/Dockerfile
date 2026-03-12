@@ -11,7 +11,7 @@ COPY src ./src
 RUN mvn package -DskipTests -B
 
 # ── Runtime stage ────────────────────────────────────────────
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
@@ -19,6 +19,11 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8081
 
 ENTRYPOINT ["java", \
-  "-XX:MaxRAMPercentage=75.0", \
+  "-Xmx256m", \
+  "-Xms128m", \
+  "-XX:MaxMetaspaceSize=128m", \
+  "-XX:+UseSerialGC", \
+  "-XX:+TieredCompilation", \
+  "-XX:TieredStopAtLevel=1", \
   "-Djava.security.egd=file:/dev/./urandom", \
   "-jar", "app.jar"]

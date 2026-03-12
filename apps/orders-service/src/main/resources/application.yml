@@ -2,7 +2,7 @@ spring:
   application:
     name: orders-service
   datasource:
-    url: ${ORDERS_DB_URL:jdbc:mysql://${ORDERS_DB_HOST:localhost}:${ORDERS_DB_PORT:3307}/${ORDERS_DB_NAME:orders_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
+    url: ${ORDERS_DB_URL:jdbc:mysql://${ORDERS_DB_HOST:localhost}:${ORDERS_DB_PORT:3306}/${ORDERS_DB_NAME:orders_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${ORDERS_DB_USERNAME:orders}
     password: ${ORDERS_DB_PASSWORD:orders}
     driver-class-name: com.mysql.cj.jdbc.Driver

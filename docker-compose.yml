@@ -17,15 +17,19 @@ services:
       start_period: 10s
     volumes:
       - mongo-data:/data/db
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
-  users-db:
+  mysql:
     image: mysql:8.4
-    container_name: restaurant-users-db
+    container_name: restaurant-mysql
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: users_db
-      MYSQL_USER: users
+      MYSQL_DATABASE: users_db          # created automatically by the image entrypoint
+      MYSQL_USER: users                 # auto-granted on MYSQL_DATABASE
       MYSQL_PASSWORD: users
       MYSQL_ROOT_PASSWORD: root
     healthcheck:
@@ -35,26 +39,12 @@ services:
       retries: 10
       start_period: 20s
     volumes:
-      - users-db-data:/var/lib/mysql
-
-  orders-db:
-    image: mysql:8.4
-    container_name: restaurant-orders-db
-    ports:
-      - "3307:3306"
-    environment:
-      MYSQL_DATABASE: orders_db
-      MYSQL_USER: orders
-      MYSQL_PASSWORD: orders
-      MYSQL_ROOT_PASSWORD: root
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-    volumes:
-      - orders-db-data:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
+      - ./infra/mysql/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # ──────────────────── Backend services ─────────────────────
 
@@ -66,8 +56,8 @@ services:
       - "8081:8081"
     environment:
       SERVER_PORT: "8081"
-      # Database — use Docker service name, not localhost
-      USERS_DB_HOST: users-db
+      # Database — shared MySQL instance
+      USERS_DB_HOST: mysql
       USERS_DB_PORT: "3306"
       USERS_DB_NAME: users_db
       USERS_DB_USERNAME: users
@@ -77,14 +67,18 @@ services:
       USERS_JWT_EXPIRATION_SECONDS: "3600"
       USERS_INTERNAL_SERVICE_TOKEN: local-dev-token
     depends_on:
-      users-db:
+      mysql:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health/readiness || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 384M
 
   menu-service:
     build:
@@ -108,11 +102,15 @@ services:
       users-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8082/actuator/health/readiness || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health/readiness || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 384M
 
   orders-service:
     build:
@@ -122,8 +120,8 @@ services:
       - "8083:8083"
     environment:
       SERVER_PORT: "8083"
-      # Database — Docker service name; internal port is 3306, NOT 3307
-      ORDERS_DB_HOST: orders-db
+      # Database — shared MySQL instance
+      ORDERS_DB_HOST: mysql
       ORDERS_DB_PORT: "3306"
       ORDERS_DB_NAME: orders_db
       ORDERS_DB_USERNAME: orders
@@ -135,18 +133,22 @@ services:
       MENU_SERVICE_BASE_URL: http://menu-service:8082
       ORDERS_TO_MENU_SERVICE_TOKEN: menu-internal-token
     depends_on:
-      orders-db:
+      mysql:
         condition: service_healthy
       users-service:
         condition: service_healthy
       menu-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8083/actuator/health/readiness || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health/readiness || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 384M
 
   # ───────────────────── Frontend (SPA) ──────────────────────
 
@@ -163,8 +165,11 @@ services:
         condition: service_healthy
       orders-service:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 64M
 
 volumes:
   mongo-data:
-  users-db-data:
-  orders-db-data:
+  mysql-data:

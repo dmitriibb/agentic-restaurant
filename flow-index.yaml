@@ -2,6 +2,26 @@ version: 1
 
 # Routing hints between implementation paths and domain knowledge.
 # Keep this file in sync with domain-brain and application structure.
+
+infrastructure:
+  databases:
+    mysql:
+      container: restaurant-mysql
+      image: mysql:8.4
+      databases:
+        - users_db    # owned by users-service
+        - orders_db   # owned by orders-service
+      init_script: infra/mysql/init-databases.sql
+    mongodb:
+      container: restaurant-mongo
+      image: mongo:7.0
+      databases:
+        - menu_db     # owned by menu-service
+  conventions:
+    new_backend_services: go
+    existing_services: java/kotlin (Spring Boot)
+    jvm_memory: fixed heap (Xmx 256m) + SerialGC for local dev
+
 flows:
   user_authentication:
     docs:
