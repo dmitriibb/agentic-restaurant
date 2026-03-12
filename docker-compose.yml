@@ -1,4 +1,7 @@
 services:
+
+  # ──────────────────────── Databases ────────────────────────
+
   mongo:
     image: mongo:7.0
     container_name: restaurant-mongo
@@ -52,6 +55,114 @@ services:
       start_period: 20s
     volumes:
       - orders-db-data:/var/lib/mysql
+
+  # ──────────────────── Backend services ─────────────────────
+
+  users-service:
+    build:
+      context: ./apps/users-service
+    container_name: restaurant-users-service
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: "8081"
+      # Database — use Docker service name, not localhost
+      USERS_DB_HOST: users-db
+      USERS_DB_PORT: "3306"
+      USERS_DB_NAME: users_db
+      USERS_DB_USERNAME: users
+      USERS_DB_PASSWORD: users
+      # Auth
+      USERS_JWT_SECRET: docker-compose-secret-change-in-prod
+      USERS_JWT_EXPIRATION_SECONDS: "3600"
+      USERS_INTERNAL_SERVICE_TOKEN: local-dev-token
+    depends_on:
+      users-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+
+  menu-service:
+    build:
+      context: ./apps/menu-service
+    container_name: restaurant-menu-service
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: "8082"
+      # Database — Docker service name
+      MENU_DB_HOST: mongo
+      MENU_DB_PORT: "27017"
+      MENU_DB_NAME: menu_db
+      # Calls to users-service — Docker service name
+      USERS_SERVICE_BASE_URL: http://users-service:8081
+      MENU_TO_USERS_SERVICE_TOKEN: local-dev-token
+      MENU_INTERNAL_SERVICE_TOKEN: menu-internal-token
+    depends_on:
+      mongo:
+        condition: service_healthy
+      users-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8082/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+
+  orders-service:
+    build:
+      context: ./apps/orders-service
+    container_name: restaurant-orders-service
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: "8083"
+      # Database — Docker service name; internal port is 3306, NOT 3307
+      ORDERS_DB_HOST: orders-db
+      ORDERS_DB_PORT: "3306"
+      ORDERS_DB_NAME: orders_db
+      ORDERS_DB_USERNAME: orders
+      ORDERS_DB_PASSWORD: orders
+      # Calls to users-service
+      USERS_SERVICE_BASE_URL: http://users-service:8081
+      ORDERS_TO_USERS_SERVICE_TOKEN: local-dev-token
+      # Calls to menu-service
+      MENU_SERVICE_BASE_URL: http://menu-service:8082
+      ORDERS_TO_MENU_SERVICE_TOKEN: menu-internal-token
+    depends_on:
+      orders-db:
+        condition: service_healthy
+      users-service:
+        condition: service_healthy
+      menu-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8083/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+
+  # ───────────────────── Frontend (SPA) ──────────────────────
+
+  orders-client:
+    build:
+      context: ./apps/orders-client
+    container_name: restaurant-orders-client
+    ports:
+      - "80:80"
+    depends_on:
+      users-service:
+        condition: service_healthy
+      menu-service:
+        condition: service_healthy
+      orders-service:
+        condition: service_healthy
 
 volumes:
   mongo-data:
