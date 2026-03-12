@@ -21,20 +21,32 @@ class JwtTokenService(
     private val signingKey: SecretKey = Keys.hmacShaKeyFor(jwtSecret.toByteArray(StandardCharsets.UTF_8))
 
     fun issueToken(user: UserAccount, now: Instant = Instant.now()): String =
-        Jwts.builder()
+        issueToken(user, expirationSeconds, now)
+
+    fun issueToken(user: UserAccount, customExpirationSeconds: Long, now: Instant = Instant.now()): String {
+        val builder = Jwts.builder()
             .subject(user.id.toString())
             .claim("login", user.login)
             .claim("roles", user.roles)
+            .claim("clientType", user.clientType.name)
             .issuedAt(Date.from(now))
-            .expiration(Date.from(now.plus(expirationSeconds, ChronoUnit.SECONDS)))
-            .signWith(signingKey)
-            .compact()
+            .expiration(Date.from(now.plus(customExpirationSeconds, ChronoUnit.SECONDS)))
+
+        if (user.displayName != null) {
+            builder.claim("displayName", user.displayName)
+        }
+
+        return builder.signWith(signingKey).compact()
+    }
+
+    fun getExpirationSeconds(): Long = expirationSeconds
 
     fun issueExpiredToken(user: UserAccount, now: Instant = Instant.now()): String =
         Jwts.builder()
             .subject(user.id.toString())
             .claim("login", user.login)
             .claim("roles", user.roles)
+            .claim("clientType", user.clientType.name)
             .issuedAt(Date.from(now.minusSeconds(3700)))
             .expiration(Date.from(now.minusSeconds(100)))
             .signWith(signingKey)

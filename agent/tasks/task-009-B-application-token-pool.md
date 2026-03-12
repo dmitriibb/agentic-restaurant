@@ -3,7 +3,7 @@
 ```yaml
 id: task-009-B-application-token-pool
 title: Application token pool endpoint in users-service
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested

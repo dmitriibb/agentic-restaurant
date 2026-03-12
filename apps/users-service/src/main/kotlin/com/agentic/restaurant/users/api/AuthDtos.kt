@@ -20,6 +20,7 @@ data class LoginResponse(
 data class UserSummary(
     val id: Long,
     val login: String,
+    val clientType: String? = null,
 )
 
 data class ValidateTokenRequest(
@@ -33,4 +34,20 @@ data class ValidateTokenResponse(
     val login: String? = null,
     val roles: List<String> = emptyList(),
     val expiresAt: Instant? = null,
+)
+
+// Application token DTOs
+
+data class ApplicationTokenRequest(
+    @field:NotBlank
+    val applicationName: String,
+    @field:NotBlank
+    val applicationSecret: String,
+)
+
+data class ApplicationTokenResponse(
+    val accessToken: String,
+    val tokenType: String = "Bearer",
+    val expiresInSeconds: Long,
+    val user: UserSummary,
 )
