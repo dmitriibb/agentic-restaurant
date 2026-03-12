@@ -1,6 +1,7 @@
 package com.agentic.restaurant.users.application
 
 import com.agentic.restaurant.users.api.ApplicationTokenResponse
+import com.agentic.restaurant.users.api.CreateGuestResponse
 import com.agentic.restaurant.users.api.LoginResponse
 import com.agentic.restaurant.users.api.UserSummary
 import com.agentic.restaurant.users.api.ValidateTokenResponse
@@ -14,6 +15,7 @@ import com.agentic.restaurant.users.security.JwtParseResult
 import com.agentic.restaurant.users.security.JwtTokenService
 import com.agentic.restaurant.users.security.PasswordHasher
 import java.time.Instant
+import java.util.UUID
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,6 +27,12 @@ sealed class ApplicationTokenResult {
     data object PoolExhausted : ApplicationTokenResult()
 }
 
+sealed class CreateGuestResult {
+    data class Success(val response: CreateGuestResponse) : CreateGuestResult()
+    data object Unauthorized : CreateGuestResult()
+    data object Forbidden : CreateGuestResult()
+}
+
 @Service
 class AuthService(
     private val userRepository: UserRepository,
@@ -32,6 +40,7 @@ class AuthService(
     private val passwordHasher: PasswordHasher,
     private val jwtTokenService: JwtTokenService,
     @Value("\${app.security.jwt-expiration-seconds:3600}") private val jwtExpirationSeconds: Long,
+    @Value("\${app.security.guest-token-expiration-seconds:86400}") private val guestTokenExpirationSeconds: Long,
     @Value("\${app.security.internal-service-token}") private val internalServiceToken: String,
     @Value("\${app.security.application-inactive-threshold-minutes:10}") private val applicationInactiveThresholdMinutes: Int,
 ) {
@@ -139,6 +148,76 @@ class AuthService(
                 ),
             ),
         )
+    }
+
+    fun createGuestUser(bearerToken: String?, displayName: String): CreateGuestResult {
+        // Validate caller's token
+        if (bearerToken == null) {
+            return CreateGuestResult.Unauthorized
+        }
+
+        val callerValidation = validateCallerToken(bearerToken)
+            ?: return CreateGuestResult.Unauthorized
+
+        // Check caller is APPLICATION type
+        if (callerValidation.clientType != ClientType.APPLICATION) {
+            return CreateGuestResult.Forbidden
+        }
+
+        // Create guest user
+        val guestLogin = "guest-${UUID.randomUUID().toString().replace("-", "").substring(0, 8)}"
+        val guestUser = UserAccount(
+            id = 0,
+            login = guestLogin,
+            passwordHash = null,
+            status = UserStatus.ACTIVE,
+            roles = listOf("CUSTOMER"),
+            clientType = ClientType.GUEST_USER,
+            displayName = displayName,
+            applicationId = null,
+            lastActiveAt = null,
+        )
+        val createdUser = userRepository.createUser(guestUser)
+
+        val token = jwtTokenService.issueToken(createdUser, guestTokenExpirationSeconds)
+        return CreateGuestResult.Success(
+            CreateGuestResponse(
+                accessToken = token,
+                expiresInSeconds = guestTokenExpirationSeconds,
+                user = UserSummary(
+                    id = createdUser.id,
+                    login = createdUser.login,
+                    displayName = createdUser.displayName,
+                    clientType = createdUser.clientType.name,
+                ),
+            ),
+        )
+    }
+
+    /**
+     * Validates a bearer token and returns the caller's user info.
+     * Returns null if the token is invalid or the user is not active.
+     */
+    private fun validateCallerToken(bearerToken: String): UserAccount? {
+        val rawToken = if (bearerToken.startsWith("Bearer ", ignoreCase = true)) {
+            bearerToken.substring(7)
+        } else {
+            bearerToken
+        }
+
+        val parseResult = jwtTokenService.parse(rawToken)
+        if (parseResult !is JwtParseResult.Valid) {
+            return null
+        }
+
+        val userId = parseResult.claims.subject.toLongOrNull() ?: return null
+        val user = userRepository.findById(userId) ?: return null
+
+        if (user.status != UserStatus.ACTIVE) {
+            return null
+        }
+
+        return user
     }
 
     fun hasValidServiceToken(requestToken: String?): Boolean = requestToken == internalServiceToken

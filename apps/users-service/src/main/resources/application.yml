@@ -42,3 +42,4 @@ app:
     jwt-expiration-seconds: ${USERS_JWT_EXPIRATION_SECONDS:3600}
     internal-service-token: ${USERS_INTERNAL_SERVICE_TOKEN:local-dev-token}
     application-inactive-threshold-minutes: ${APP_INACTIVE_THRESHOLD_MINUTES:10}
+    guest-token-expiration-seconds: ${USERS_GUEST_TOKEN_EXPIRATION_SECONDS:86400}

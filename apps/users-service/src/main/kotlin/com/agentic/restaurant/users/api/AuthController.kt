@@ -2,6 +2,7 @@ package com.agentic.restaurant.users.api
 
 import com.agentic.restaurant.users.application.ApplicationTokenResult
 import com.agentic.restaurant.users.application.AuthService
+import com.agentic.restaurant.users.application.CreateGuestResult
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -32,6 +33,18 @@ class AuthController(
             is ApplicationTokenResult.Unauthorized -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
             is ApplicationTokenResult.Forbidden -> ResponseEntity.status(HttpStatus.FORBIDDEN).build()
             is ApplicationTokenResult.PoolExhausted -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        }
+    }
+
+    @PostMapping("/auth/guests")
+    fun createGuest(
+        @RequestHeader("Authorization", required = false) authorization: String?,
+        @Valid @RequestBody request: CreateGuestRequest,
+    ): ResponseEntity<CreateGuestResponse> {
+        return when (val result = authService.createGuestUser(authorization, request.displayName)) {
+            is CreateGuestResult.Success -> ResponseEntity.status(HttpStatus.CREATED).body(result.response)
+            is CreateGuestResult.Unauthorized -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+            is CreateGuestResult.Forbidden -> ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
     }
 

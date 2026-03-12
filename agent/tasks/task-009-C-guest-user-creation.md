@@ -3,7 +3,7 @@
 ```yaml
 id: task-009-C-guest-user-creation
 title: Guest user creation endpoint in users-service
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested

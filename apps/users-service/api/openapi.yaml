@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: Users Service API
-  version: 0.3.0
-  description: Authentication, application token pool, and internal token validation contract.
+  version: 0.4.0
+  description: Authentication, application token pool, guest user creation, and internal token validation contract.
 servers:
   - url: http://localhost:8081
 paths:
@@ -48,6 +48,31 @@ paths:
           description: Application is disabled
         '503':
           description: All pool slots occupied by active instances
+  /api/v1/auth/guests:
+    post:
+      summary: Create a guest user and issue a 24-hour JWT
+      operationId: createGuest
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGuestRequest'
+      responses:
+        '201':
+          description: Guest user created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateGuestResponse'
+        '400':
+          description: Invalid or missing displayName
+        '401':
+          description: Missing or invalid bearer token
+        '403':
+          description: Caller is not an APPLICATION user
   /api/v1/internal/auth/validate:
     post:
       summary: Validate JWT for internal services
@@ -71,6 +96,10 @@ paths:
           description: Missing or invalid service credential
 components:
   securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
     serviceToken:
       type: apiKey
       in: header
@@ -174,6 +203,36 @@ components:
           format: int64
         login:
           type: string
+        displayName:
+          type: string
         clientType:
           type: string
           example: REGISTERED_USER
+    CreateGuestRequest:
+      type: object
+      required:
+        - displayName
+      properties:
+        displayName:
+          type: string
+          maxLength: 100
+          example: John
+    CreateGuestResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresInSeconds
+        - user
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresInSeconds:
+          type: integer
+          format: int32
+          example: 86400
+        user:
+          $ref: '#/components/schemas/UserSummary'

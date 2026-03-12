@@ -1,6 +1,7 @@
 package com.agentic.restaurant.users.api
 
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
 import java.time.Instant
 
 data class LoginRequest(
@@ -20,6 +21,7 @@ data class LoginResponse(
 data class UserSummary(
     val id: Long,
     val login: String,
+    val displayName: String? = null,
     val clientType: String? = null,
 )
 
@@ -46,6 +48,21 @@ data class ApplicationTokenRequest(
 )
 
 data class ApplicationTokenResponse(
+    val accessToken: String,
+    val tokenType: String = "Bearer",
+    val expiresInSeconds: Long,
+    val user: UserSummary,
+)
+
+// Guest user DTOs
+
+data class CreateGuestRequest(
+    @field:NotBlank
+    @field:Size(max = 100)
+    val displayName: String,
+)
+
+data class CreateGuestResponse(
     val accessToken: String,
     val tokenType: String = "Bearer",
     val expiresInSeconds: Long,
