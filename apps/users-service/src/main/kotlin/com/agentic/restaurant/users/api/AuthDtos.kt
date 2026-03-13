@@ -35,6 +35,8 @@ data class ValidateTokenResponse(
     val userId: Long? = null,
     val login: String? = null,
     val roles: List<String> = emptyList(),
+    val clientType: String? = null,
+    val displayName: String? = null,
     val expiresAt: Instant? = null,
 )
 

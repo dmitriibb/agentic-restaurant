@@ -8,3 +8,4 @@ app:
     jwt-secret: integration-test-jwt-secret-key-0123456789
     jwt-expiration-seconds: 3600
     internal-service-token: integration-service-token
+    guest-retention-days: 7

@@ -50,9 +50,14 @@ class AuthService(
         if (user.status != UserStatus.ACTIVE) {
             return null
         }
+        if (user.clientType != ClientType.REGISTERED_USER) {
+            return null
+        }
         if (user.passwordHash == null || !passwordHasher.verify(password, user.passwordHash)) {
             return null
         }
+
+        userRepository.updateLastActiveAt(user.id)
 
         val token = jwtTokenService.issueToken(user)
         return LoginResponse(
@@ -61,6 +66,7 @@ class AuthService(
             user = UserSummary(
                 id = user.id,
                 login = user.login,
+                displayName = user.displayName,
                 clientType = user.clientType.name,
             ),
         )
@@ -80,11 +86,15 @@ class AuthService(
                 val roles = parseResult.claims["roles"] as? List<String> ?: emptyList()
                 val login = parseResult.claims["login"] as? String ?: user.login
                 val expiresAt = parseResult.claims.expiration?.toInstant() ?: Instant.EPOCH
+                val clientType = parseResult.claims["clientType"] as? String ?: "REGISTERED_USER"
+                val displayName = parseResult.claims["displayName"] as? String ?: user.displayName
                 ValidateTokenResponse(
                     valid = true,
                     userId = userId,
                     login = login,
                     roles = roles,
+                    clientType = clientType,
+                    displayName = displayName,
                     expiresAt = expiresAt,
                 )
             }

@@ -9,4 +9,5 @@ interface UserRepository {
     fun countByApplicationId(applicationId: Long): Int
     fun createUser(user: UserAccount): UserAccount
     fun updateLastActiveAt(userId: Long)
+    fun disableGuestsOlderThan(retentionDays: Int): Int
 }

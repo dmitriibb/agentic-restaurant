@@ -95,4 +95,14 @@ class JdbcUserRepository(
             userId,
         )
     }
+
+    override fun disableGuestsOlderThan(retentionDays: Int): Int =
+        jdbcTemplate.update(
+            """UPDATE users
+               SET status = 'DISABLED'
+               WHERE client_type = 'GUEST_USER'
+                 AND status = 'ACTIVE'
+                 AND created_at < DATE_SUB(NOW(), INTERVAL ? DAY)""",
+            retentionDays,
+        )
 }

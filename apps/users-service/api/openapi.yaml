@@ -192,6 +192,13 @@ components:
         expiresAt:
           type: string
           format: date-time
+        clientType:
+          type: string
+          description: Client type of the token holder (REGISTERED_USER, GUEST_USER, APPLICATION). Defaults to REGISTERED_USER for legacy tokens.
+          example: REGISTERED_USER
+        displayName:
+          type: string
+          description: Display name of the user. Present for guest users (from JWT claim) and registered users with a display name (from database).
     UserSummary:
       type: object
       required:

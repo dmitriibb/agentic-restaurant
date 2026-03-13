@@ -3,7 +3,7 @@
 ```yaml
 id: task-009-D-token-claim-validation-changes
 title: Token claims, validation response, and guest archival
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested
