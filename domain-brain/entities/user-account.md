@@ -10,7 +10,7 @@ An authenticated platform user owned by `users-service`.
 - `login: string`
 - `passwordHash: string` (nullable - null for guest and application users)
 - `status: string` (ACTIVE, DISABLED)
-- `roles: string[]`
+- `roles: string[]` (for example `CUSTOMER`, `STAFF`, `MANAGER`, `ADMIN`)
 - `clientType: string` (REGISTERED_USER, GUEST_USER, APPLICATION)
 - `displayName: string?` (nullable - set for guests at creation, optional for registered users)
 - `applicationId: long?` (nullable - set only for APPLICATION users, references the applications table)
@@ -41,3 +41,5 @@ An authenticated platform user owned by `users-service`.
 - The first version is seeded with one predefined `admin` user for local development.
 - Passwords must never be stored or logged in plaintext.
 - Guest users are automatically archived (status set to DISABLED) by a daily scheduled job after a configurable retention period (default: 7 days from `created_at`).
+- Staff production access is granted through registered users carrying `STAFF` or `MANAGER` roles.
+- Guest and application users are not allowed to mutate production items.

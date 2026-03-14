@@ -3,6 +3,7 @@
 - `users-service` is the only service that owns credentials, password hashes, and JWT issuance.
 - `menu-service` is the only service that owns menu item catalog data.
 - `orders-service` is the only service that owns persisted orders and order lines.
+- `production-service` is the only service that owns operational production orders and production items.
 - Services must not access another service's database directly.
 - Services sharing a database engine type share a single database server instance; each service owns its own named database within that server.
 - All new backend services must be implemented in Go unless there is a justified exception.
@@ -25,3 +26,9 @@
 - `userId` in an order request must match the authenticated token subject.
 - Orders are idempotent per `(userId, requestId)`.
 - Order lines store item name and unit price snapshots at submission time.
+- Accepted order lines keep a stable `lineNumber` for downstream production references.
+- Accepted orders are handed off to production through RabbitMQ with at-least-once delivery semantics.
+- Order-intake publishers and production consumers must be idempotent.
+- Production work is tracked per quantity unit as `ProductionItem`, not only per submitted order line.
+- Production order status is derived from production item statuses and is not edited directly through a separate order-status command.
+- Staff-facing production endpoints require an authenticated user with role `STAFF` or `MANAGER`.

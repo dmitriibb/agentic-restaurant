@@ -40,9 +40,25 @@ The persisted record created by `orders-service` after successful validation of 
 
 A single submitted item reference with quantity and a snapshot of menu name and unit price.
 
+## ProductionItem
+
+One executable kitchen work unit generated from an accepted order line quantity and owned by `production-service`.
+
+## ProductionOrder
+
+The operational aggregate for an accepted order inside `production-service`.
+
+## ProductionStatus
+
+The lifecycle enum used by `production-service` for production orders and production items.
+
 ## RequestId
 
 A client-generated identifier used in `PUT` order creation to make retries idempotent.
+
+## Staff Board
+
+The web interface used by restaurant staff to view queued work and update production item status.
 
 ## UserAccount
 
@@ -54,4 +70,4 @@ The flow where a caller receives a JWT from `users-service` and uses it for prot
 
 ## Shared MySQL Instance
 
-A single MySQL 8.4 container (`restaurant-mysql`) hosting multiple logical databases (`users_db`, `orders_db`). Each service connects with its own credentials and is restricted to its own database.
+A single MySQL 8.4 container (`restaurant-mysql`) hosting multiple logical databases (`users_db`, `orders_db`, `production_db`). Each service connects with its own credentials and is restricted to its own database.

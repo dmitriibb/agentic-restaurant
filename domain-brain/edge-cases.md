@@ -35,3 +35,21 @@
 
 - Scenario: Menu price changes after a user has loaded the menu but before order submission.
   Expected handling: `orders-service` uses the current menu snapshot at submission time and persists that snapshot with the accepted order.
+
+- Scenario: An accepted order contains a line with quantity greater than `1`.
+  Expected handling: `orders-service` emits one production request event per quantity unit and `production-service` creates one `ProductionItem` per unit.
+
+- Scenario: RabbitMQ is unavailable immediately after `orders-service` accepts an order.
+  Expected handling: the order remains accepted, the outbox record stays pending, and background publishing retries until the production events are delivered.
+
+- Scenario: RabbitMQ redelivers the same `production.item.requested.v1` event.
+  Expected handling: `production-service` ignores the duplicate through event-id and source-item-key idempotency checks.
+
+- Scenario: Two staff members try to pick up the same production item.
+  Expected handling: only one transition succeeds; the other receives a conflict due to conditional update or optimistic locking.
+
+- Scenario: One production item becomes `BLOCKED` while others are already `READY`.
+  Expected handling: the production order remains not-ready and surfaces `BLOCKED` until the issue is resolved or the item is cancelled.
+
+- Scenario: Staff client reconnects after losing network connectivity.
+  Expected handling: the client reloads the current board snapshot from `production-service` and then resumes its live update stream.

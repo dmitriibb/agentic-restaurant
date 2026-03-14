@@ -11,12 +11,19 @@ infrastructure:
       databases:
         - users_db    # owned by users-service
         - orders_db   # owned by orders-service
+        - production_db   # owned by production-service
       init_script: infra/mysql/init-databases.sql
     mongodb:
       container: restaurant-mongo
       image: mongo:7.0
       databases:
         - menu_db     # owned by menu-service
+  messaging:
+    rabbitmq:
+      container: restaurant-rabbitmq
+      image: rabbitmq:4.1-management
+      exchanges:
+        - restaurant.production.v1
   conventions:
     new_backend_services: go
     existing_services: java/kotlin (Spring Boot)
@@ -28,6 +35,8 @@ flows:
       - domain-brain/flows/user-authentication.md
     paths:
       - apps/users-service
+      - apps/production-service
+      - apps/staff-client
       - apps/users-service/src/main/kotlin/com/agentic/restaurant/users/api/AuthController.kt
       - apps/orders-client/src/features/auth
       - apps/orders-client/src/features/auth/appToken.ts
@@ -53,12 +62,33 @@ flows:
       - domain-brain/state-machines/order-lifecycle.md
     paths:
       - apps/orders-service
+      - apps/production-service
       - apps/menu-service
       - apps/users-service
       - apps/orders-client/src/features/orders
       - apps/orders-client/src/features/basket
+      - docker-compose.yml
     entities:
       - Order
+      - ProductionOrder
+      - ProductionItem
       - MenuItem
+      - UserAccount
+      - AccessToken
+  order_production:
+    docs:
+      - domain-brain/flows/order-production.md
+      - domain-brain/state-machines/order-lifecycle.md
+      - domain-brain/state-machines/production-item-lifecycle.md
+    paths:
+      - apps/orders-service
+      - apps/production-service
+      - apps/staff-client
+      - apps/users-service
+      - docker-compose.yml
+    entities:
+      - Order
+      - ProductionOrder
+      - ProductionItem
       - UserAccount
       - AccessToken

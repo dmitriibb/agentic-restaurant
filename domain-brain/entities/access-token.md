@@ -17,7 +17,7 @@ A JWT issued by `users-service` that authenticates a user for protected API call
 ## Ownership
 
 - Issued by: `users-service`
-- Consumed by: `orders-client`, `menu-service`, `orders-service`
+- Consumed by: `orders-client`, `staff-client`, `menu-service`, `orders-service`, `production-service`
 
 ## Notes
 
@@ -25,3 +25,4 @@ A JWT issued by `users-service` that authenticates a user for protected API call
 - Guest token expiration is configurable (`app.security.guest-token-expiration-seconds`).
 - Application tokens are used by backend services and the guest-creation path in `orders-client`.
 - Backward compatibility: tokens without a `clientType` claim are treated as `REGISTERED_USER` during validation.
+- Staff production access is authorized by roles in the token claims, with `STAFF` and `MANAGER` allowed for the first version.

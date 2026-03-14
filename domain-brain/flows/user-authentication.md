@@ -6,12 +6,13 @@ Authenticate registered users, guest users, and application callers, then issue 
 
 ## Registered User Flow
 
-1. `orders-client` shows the registered login form when there is no authenticated user session.
+1. `orders-client` or `staff-client` shows the registered login form when there is no authenticated user session.
 2. Client calls `POST /api/v1/auth/login` with login and password.
 3. `users-service` verifies password hash, user status, and that `clientType = REGISTERED_USER`.
 4. `users-service` updates `last_active_at` on successful login.
 5. `users-service` returns a one-hour JWT with user identity and claims.
-6. Client stores the user token and sends it in the `Authorization` header for protected calls.
+6. The client stores the user token and sends it in the `Authorization` header for protected calls.
+7. Downstream services authorize features by role, for example `production-service` allows only `STAFF` and `MANAGER` on staff endpoints.
 
 ## Guest Authentication Flow
 
