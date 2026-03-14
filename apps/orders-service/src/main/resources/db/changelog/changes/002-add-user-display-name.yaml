@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-user-display-name-to-orders
+      author: codex
+      changes:
+        - addColumn:
+            tableName: orders
+            columns:
+              - column:
+                  name: user_display_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true

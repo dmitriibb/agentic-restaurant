@@ -31,4 +31,5 @@ data class SubmitOrderResponse(
     val requestId: String,
     val status: String,
     val totalAmount: Double,
+    val userDisplayName: String? = null,
 )

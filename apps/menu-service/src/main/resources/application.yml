@@ -38,3 +38,6 @@ app:
   auth:
     users-service-base-url: ${USERS_SERVICE_BASE_URL:http://localhost:8081}
     users-service-token: ${MENU_TO_USERS_SERVICE_TOKEN:local-dev-token}
+    application-name: ${APP_AUTH_NAME:menu-service}
+    application-secret: ${APP_AUTH_SECRET:menu-service-secret}
+    token-refresh-factor: ${APP_AUTH_REFRESH_FACTOR:0.8}

@@ -81,6 +81,7 @@ class OrderSubmissionService(
                 status = "ACCEPTED",
                 totalAmount = orderTotal,
                 lineSnapshots = lineSnapshots,
+                userDisplayName = tokenValidation.displayName,
             )
         } catch (_: DuplicateKeyException) {
             // Handles races between repeated requests with the same request id.
@@ -100,5 +101,6 @@ private fun com.agentic.restaurant.orders.persistence.StoredOrder.toResponse(): 
         requestId = requestId,
         status = status,
         totalAmount = totalAmount.toDouble(),
+        userDisplayName = userDisplayName,
     )
 }

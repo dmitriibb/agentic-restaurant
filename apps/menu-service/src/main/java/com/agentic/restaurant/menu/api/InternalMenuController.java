@@ -1,8 +1,8 @@
 package com.agentic.restaurant.menu.api;
 
+import com.agentic.restaurant.menu.application.AuthValidationClient;
 import com.agentic.restaurant.menu.application.MenuCatalogService;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,22 +16,31 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalMenuController {
 
     private final MenuCatalogService menuCatalogService;
-    private final String internalServiceToken;
+    private final AuthValidationClient authValidationClient;
 
     public InternalMenuController(
         MenuCatalogService menuCatalogService,
-        @Value("${app.security.internal-service-token}") String internalServiceToken
+        AuthValidationClient authValidationClient
     ) {
         this.menuCatalogService = menuCatalogService;
-        this.internalServiceToken = internalServiceToken;
+        this.authValidationClient = authValidationClient;
     }
 
     @PostMapping("/resolve")
     public ResponseEntity<ResolveMenuItemsResponse> resolveMenuItems(
-        @RequestHeader(value = "X-Service-Token", required = false) String serviceToken,
+        @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
         @RequestBody ResolveMenuItemsRequest request
     ) {
-        if (!internalServiceToken.equals(serviceToken)) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String bearerToken = authorizationHeader.substring("Bearer ".length());
+        var validation = authValidationClient.validateToken(bearerToken);
+        if (!validation.valid()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!"APPLICATION".equals(validation.clientType())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 

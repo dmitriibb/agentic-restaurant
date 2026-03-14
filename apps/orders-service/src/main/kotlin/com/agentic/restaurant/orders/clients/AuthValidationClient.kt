@@ -30,7 +30,9 @@ class AuthValidationClient(
             val body = response.body ?: return TokenValidationResult(valid = false)
             val valid = body["valid"] as? Boolean ?: false
             val userId = (body["userId"] as? Number)?.toLong()
-            TokenValidationResult(valid = valid, userId = userId)
+            val clientType = body["clientType"] as? String
+            val displayName = body["displayName"] as? String
+            TokenValidationResult(valid = valid, userId = userId, clientType = clientType, displayName = displayName)
         } catch (_: Exception) {
             TokenValidationResult(valid = false)
         }

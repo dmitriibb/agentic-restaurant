@@ -15,6 +15,7 @@ app:
   auth:
     users-service-base-url: http://localhost:8081
     users-service-token: integration-users-token
+    application-name: orders-service
+    application-secret: orders-service-secret
   menu:
     base-url: http://localhost:8082
-    service-token: integration-menu-token

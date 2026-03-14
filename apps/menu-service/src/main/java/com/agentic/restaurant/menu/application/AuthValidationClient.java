@@ -26,6 +26,11 @@ public class AuthValidationClient {
     }
 
     public boolean validateBearerToken(String bearerToken) {
+        return validateToken(bearerToken).valid();
+    }
+
+    @SuppressWarnings("unchecked")
+    public TokenValidationResult validateToken(String bearerToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Service-Token", usersServiceToken);
@@ -37,10 +42,20 @@ public class AuthValidationClient {
                 request,
                 Map.class
             );
-            Object valid = response.getBody() == null ? null : response.getBody().get("valid");
-            return Boolean.TRUE.equals(valid);
+            Map<String, Object> body = response.getBody();
+            if (body == null) {
+                return TokenValidationResult.INVALID;
+            }
+            boolean valid = Boolean.TRUE.equals(body.get("valid"));
+            String clientType = (String) body.get("clientType");
+            String displayName = (String) body.get("displayName");
+            return new TokenValidationResult(valid, clientType, displayName);
         } catch (Exception ex) {
-            return false;
+            return TokenValidationResult.INVALID;
         }
+    }
+
+    public record TokenValidationResult(boolean valid, String clientType, String displayName) {
+        static final TokenValidationResult INVALID = new TokenValidationResult(false, null, null);
     }
 }

@@ -1,5 +1,6 @@
 package com.agentic.restaurant.orders.clients
 
+import com.agentic.restaurant.orders.application.StartupAuthClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -10,14 +11,17 @@ import org.springframework.web.client.RestTemplate
 @Component
 class MenuLookupClient(
     @Value("\${app.menu.base-url}") private val menuServiceBaseUrl: String,
-    @Value("\${app.menu.service-token}") private val menuServiceToken: String,
+    private val startupAuthClient: StartupAuthClient,
 ) {
     private val restTemplate = RestTemplate()
 
     fun resolveMenuItems(itemIds: List<Long>): MenuResolutionResult {
+        val appToken = startupAuthClient.getToken()
+            ?: return MenuResolutionResult(items = emptyList(), missingItemIds = itemIds)
+
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_JSON
-        headers["X-Service-Token"] = menuServiceToken
+        headers.setBearerAuth(appToken)
 
         val request = HttpEntity(mapOf("itemIds" to itemIds), headers)
 

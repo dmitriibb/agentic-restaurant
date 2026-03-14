@@ -96,6 +96,9 @@ services:
       USERS_SERVICE_BASE_URL: http://users-service:8081
       MENU_TO_USERS_SERVICE_TOKEN: local-dev-token
       MENU_INTERNAL_SERVICE_TOKEN: menu-internal-token
+      # Application auth
+      APP_AUTH_NAME: menu-service
+      APP_AUTH_SECRET: menu-service-secret
     depends_on:
       mongo:
         condition: service_healthy
@@ -131,7 +134,9 @@ services:
       ORDERS_TO_USERS_SERVICE_TOKEN: local-dev-token
       # Calls to menu-service
       MENU_SERVICE_BASE_URL: http://menu-service:8082
-      ORDERS_TO_MENU_SERVICE_TOKEN: menu-internal-token
+      # Application auth
+      APP_AUTH_NAME: orders-service
+      APP_AUTH_SECRET: orders-service-secret
     depends_on:
       mysql:
         condition: service_healthy
@@ -158,6 +163,9 @@ services:
     container_name: restaurant-orders-client
     ports:
       - "80:80"
+    environment:
+      VITE_APP_NAME: orders-client
+      VITE_APP_SECRET: orders-client-secret
     depends_on:
       users-service:
         condition: service_healthy

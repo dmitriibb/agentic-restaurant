@@ -12,3 +12,5 @@ app:
   auth:
     users-service-base-url: http://localhost:8081
     users-service-token: local-dev-token
+    application-name: menu-service
+    application-secret: menu-service-secret

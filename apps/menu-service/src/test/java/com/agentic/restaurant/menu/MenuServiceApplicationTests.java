@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.agentic.restaurant.menu.application.AuthValidationClient;
+import com.agentic.restaurant.menu.application.AuthValidationClient.TokenValidationResult;
+import com.agentic.restaurant.menu.application.StartupAuthClient;
 import com.agentic.restaurant.menu.infrastructure.MenuItemDocument;
 import com.agentic.restaurant.menu.infrastructure.MenuItemRepository;
 import java.util.List;
@@ -39,9 +41,14 @@ class MenuServiceApplicationTests {
     @MockBean
     private AuthValidationClient authValidationClient;
 
+    @MockBean
+    private StartupAuthClient startupAuthClient;
+
     @BeforeEach
     void setup() {
         when(authValidationClient.validateBearerToken(anyString())).thenReturn(true);
+        when(authValidationClient.validateToken(anyString()))
+            .thenReturn(new TokenValidationResult(true, "APPLICATION", null));
     }
 
     @Test
@@ -108,7 +115,7 @@ class MenuServiceApplicationTests {
         Long missingId = 99999999999L;
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Service-Token", "integration-menu-internal-token");
+        headers.setBearerAuth("valid-app-jwt");
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(
             Map.of("itemIds", List.of(existingId, missingId)),
@@ -127,8 +134,38 @@ class MenuServiceApplicationTests {
     }
 
     @Test
-    void internalResolveEndpointRequiresServiceCredential() {
+    void internalResolveEndpointRequiresBearerAuth() {
         HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(Map.of("itemIds", List.of(10000000001L)), headers);
+
+        var response = restTemplate.postForEntity("/api/v1/internal/menu-items/resolve", request, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void internalResolveEndpointRejectsInvalidToken() {
+        when(authValidationClient.validateToken("bad-token"))
+            .thenReturn(new TokenValidationResult(false, null, null));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth("bad-token");
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(Map.of("itemIds", List.of(10000000001L)), headers);
+
+        var response = restTemplate.postForEntity("/api/v1/internal/menu-items/resolve", request, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void internalResolveEndpointRejectsNonApplicationCaller() {
+        when(authValidationClient.validateToken("user-jwt"))
+            .thenReturn(new TokenValidationResult(true, "REGISTERED_USER", null));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth("user-jwt");
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(Map.of("itemIds", List.of(10000000001L)), headers);
 

@@ -1,5 +1,6 @@
 package com.agentic.restaurant.orders
 
+import com.agentic.restaurant.orders.application.StartupAuthClient
 import com.agentic.restaurant.orders.clients.AuthValidationClient
 import com.agentic.restaurant.orders.clients.MenuLookupClient
 import com.agentic.restaurant.orders.clients.MenuResolutionResult
@@ -40,13 +41,16 @@ class OrdersServiceApplicationTests {
     @MockBean
     lateinit var menuLookupClient: MenuLookupClient
 
+    @MockBean
+    lateinit var startupAuthClient: StartupAuthClient
+
     @BeforeEach
     fun setup() {
         jdbcTemplate.update("DELETE FROM order_lines")
         jdbcTemplate.update("DELETE FROM orders")
 
         `when`(authValidationClient.validateBearerToken(anyString())).thenReturn(
-            TokenValidationResult(valid = true, userId = 1001L),
+            TokenValidationResult(valid = true, userId = 1001L, displayName = "Test User"),
         )
         `when`(menuLookupClient.resolveMenuItems(anyList())).thenReturn(
             MenuResolutionResult(
@@ -118,6 +122,7 @@ class OrdersServiceApplicationTests {
         assertThat(responseBody["requestId"]).isEqualTo(requestId)
         assertThat(responseBody["status"]).isEqualTo("ACCEPTED")
         assertThat((responseBody["totalAmount"] as Number).toDouble()).isEqualTo(28.0)
+        assertThat(responseBody["userDisplayName"]).isEqualTo("Test User")
 
         val ordersCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders", Int::class.java)!!
         val orderLinesCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM order_lines", Int::class.java)!!
@@ -144,6 +149,29 @@ class OrdersServiceApplicationTests {
 
         assertThat(firstLineName).isEqualTo("Margherita Pizza")
         assertThat(firstLinePrice).isEqualByComparingTo(BigDecimal("12.50"))
+    }
+
+    @Test
+    fun `order stores user display name in database`() {
+        val requestId = UUID.randomUUID().toString()
+        val response = submitOrder(
+            requestId = requestId,
+            body = mapOf(
+                "userId" to 1001,
+                "items" to listOf(mapOf("itemId" to 1, "quantity" to 1)),
+            ),
+        )
+
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+
+        @Suppress("UNCHECKED_CAST")
+        val orderId = ((response.body as Map<String, Any>)["orderId"] as Number).toLong()
+        val storedDisplayName = jdbcTemplate.queryForObject(
+            "SELECT user_display_name FROM orders WHERE id = ?",
+            String::class.java,
+            orderId,
+        )
+        assertThat(storedDisplayName).isEqualTo("Test User")
     }
 
     @Test

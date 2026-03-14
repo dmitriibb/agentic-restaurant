@@ -18,4 +18,5 @@ data class StoredOrder(
     val status: String,
     val totalAmount: BigDecimal,
     val createdAt: Instant,
+    val userDisplayName: String? = null,
 )

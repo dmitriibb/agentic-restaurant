@@ -23,13 +23,14 @@ class OrderPersistence(
             status = rs.getString("status"),
             totalAmount = rs.getBigDecimal("total_amount"),
             createdAt = rs.getTimestamp("created_at").toInstant(),
+            userDisplayName = rs.getString("user_display_name"),
         )
     }
 
     fun findOrderByUserIdAndRequestId(userId: Long, requestId: String): StoredOrder? {
         return jdbcTemplate.query(
             """
-            SELECT id, external_request_id, user_id, status, total_amount, created_at
+            SELECT id, external_request_id, user_id, status, total_amount, created_at, user_display_name
             FROM orders
             WHERE user_id = ? AND external_request_id = ?
             """.trimIndent(),
@@ -46,14 +47,15 @@ class OrderPersistence(
         status: String,
         totalAmount: BigDecimal,
         lineSnapshots: List<OrderLineSnapshot>,
+        userDisplayName: String? = null,
     ): StoredOrder {
         val keyHolder = GeneratedKeyHolder()
         jdbcTemplate.update(
             { connection ->
                 val statement = connection.prepareStatement(
                     """
-                    INSERT INTO orders (external_request_id, user_id, status, total_amount)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO orders (external_request_id, user_id, status, total_amount, user_display_name)
+                    VALUES (?, ?, ?, ?, ?)
                     """.trimIndent(),
                     arrayOf("id"),
                 )
@@ -61,6 +63,11 @@ class OrderPersistence(
                 statement.setLong(2, userId)
                 statement.setString(3, status)
                 statement.setBigDecimal(4, totalAmount)
+                if (userDisplayName != null) {
+                    statement.setString(5, userDisplayName)
+                } else {
+                    statement.setNull(5, Types.VARCHAR)
+                }
                 statement
             },
             keyHolder,
@@ -78,6 +85,7 @@ class OrderPersistence(
             status = status,
             totalAmount = totalAmount,
             createdAt = findCreatedAt(orderId),
+            userDisplayName = userDisplayName,
         )
     }
 

@@ -40,6 +40,8 @@ app:
   auth:
     users-service-base-url: ${USERS_SERVICE_BASE_URL:http://localhost:8081}
     users-service-token: ${ORDERS_TO_USERS_SERVICE_TOKEN:local-dev-token}
+    application-name: ${APP_AUTH_NAME:orders-service}
+    application-secret: ${APP_AUTH_SECRET:orders-service-secret}
+    token-refresh-factor: ${APP_AUTH_REFRESH_FACTOR:0.8}
   menu:
     base-url: ${MENU_SERVICE_BASE_URL:http://localhost:8082}
-    service-token: ${ORDERS_TO_MENU_SERVICE_TOKEN:menu-internal-token}

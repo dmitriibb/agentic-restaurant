@@ -8,3 +8,5 @@ app:
   auth:
     users-service-base-url: http://localhost:18081
     users-service-token: integration-users-token
+    application-name: menu-service
+    application-secret: menu-service-secret
