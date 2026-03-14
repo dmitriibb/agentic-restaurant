@@ -3,7 +3,7 @@
 ```yaml
 id: task-restaurant-platform-architecture-001
 title: Design the initial restaurant platform architecture
-status: planning
+status: done
 priority: high
 type: architecture
 architecture: required

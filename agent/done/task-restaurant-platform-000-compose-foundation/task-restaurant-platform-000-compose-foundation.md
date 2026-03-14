@@ -3,7 +3,7 @@
 ```yaml
 id: task-restaurant-platform-000-compose-foundation
 title: Create docker compose for restaurant platform datastores
-status: queued
+status: done
 priority: high
 type: infrastructure
 architecture: not_requested
