@@ -3,7 +3,7 @@
 ```yaml
 id: task-009-user-types-and-guest-access
 title: User types, guest access, and application authentication
-status: queued
+status: done
 priority: high
 type: feature
 architecture: requested
