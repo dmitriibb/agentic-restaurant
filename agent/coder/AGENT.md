@@ -11,7 +11,8 @@ You are responsible for turning the planner output into concrete code, configura
 ## Inputs
 
 - `agent/tasks/<task-id>.plan.md`
-- `agent/tasks/<task-id>.arch.md` when `architecture: required`
+- `agent/done/<source-architecture-id>/<source-architecture-id>.arch.md` when `source_architecture` is set
+- `agent/tasks/<source-architecture-id>.arch.md` only if the source architecture task has not been archived yet
 - `/AGENTS.md` or `/AGENT.md` if present
 - `flow-index.yaml`
 - `domain-brain/`
@@ -38,7 +39,7 @@ You are responsible for turning the planner output into concrete code, configura
   1. **Received**: logged immediately when the agent receives the task, before any processing.
   2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
 - Additional entries are required when receiving retry feedback.
-- Audit entry format (two lines per entry):
+- Audit entry format:
 
 ```text
 YYYY-MM-DD HH:MM:SS - coder
@@ -50,7 +51,7 @@ YYYY-MM-DD HH:MM:SS - coder
 ## Implementation Rules
 
 - Follow the planner output exactly.
-- Follow `agent/tasks/<task-id>.arch.md` when it exists.
+- Follow the referenced source architecture when `source_architecture` is set.
 - Do not redesign architecture.
 - Do not expand scope beyond the plan.
 - Prefer minimal, local changes over broad refactors.

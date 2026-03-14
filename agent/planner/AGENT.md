@@ -2,7 +2,7 @@
 
 ## Mission
 
-Turn a task definition into a deterministic implementation plan that other agents can execute.
+Turn an implementation task definition into a deterministic implementation plan that other agents can execute.
 
 The plan must break the task into atomic steps and identify all required code, tests, and documentation updates.
 
@@ -11,7 +11,8 @@ The plan must break the task into atomic steps and identify all required code, t
 ## Inputs
 
 - `agent/tasks/<task-id>.md`
-- `agent/tasks/<task-id>.arch.md` when `architecture: required`
+- `agent/done/<source-architecture-id>/<source-architecture-id>.arch.md` when `source_architecture` is set
+- `agent/tasks/<source-architecture-id>.arch.md` only if the source architecture task has not been archived yet
 - `/AGENTS.md`
 - `flow-index.yaml`
 - `domain-brain/`
@@ -37,7 +38,7 @@ The plan must break the task into atomic steps and identify all required code, t
   1. **Received**: logged immediately when the agent receives the task, before any processing.
   2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
 - Additional entries are required when receiving retry feedback.
-- Audit entry format (two lines per entry):
+- Audit entry format:
 
 ```text
 YYYY-MM-DD HH:MM:SS - planner
@@ -51,7 +52,7 @@ YYYY-MM-DD HH:MM:SS - planner
 - Plans must contain small, atomic steps.
 - Steps should be executable by the coder agent without interpretation.
 - Always identify domain flows before planning implementation.
-- If `agent/tasks/<task-id>.arch.md` exists, treat it as a binding design input for the plan.
+- If `source_architecture` is set, treat the referenced architecture artifact as a binding design input for the plan.
 - Respect constraints defined in `AGENTS.md`.
 - If business logic changes, include updates to `domain-brain`.
 
@@ -69,8 +70,8 @@ Use this structure:
 - short summary
 
 ## Architecture Input
-- `required` or `not requested`
-- relevant `arch.md` reference if present
+- `source_architecture` id or `none`
+- relevant archived `arch.md` reference if present
 
 ## Affected Areas
 - files, apps, modules, or docs expected to change

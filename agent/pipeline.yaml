@@ -1,27 +1,88 @@
-version: 1
+version: 2
 
-pipeline:
-  - supervisor
-  - planner
-  - coder
-  - tester
-  - reviewer
-  - pull_request
-  - done
+pipelines:
+  implementation:
+    description: Execute implementation-ready tasks through planning, coding, testing, and review.
+    task_selection:
+      default: true
+      when:
+        - task metadata sets pipeline to implementation
+        - or pipeline is omitted and architecture is not required
+        - or the user explicitly asks to implement, fix, or work on an existing task
+    stages:
+      - supervisor
+      - planner
+      - coder
+      - tester
+      - reviewer
+      - pull_request
+      - done
+    required_task_metadata:
+      pipeline: implementation
+      architecture: not_requested
+    optional_task_metadata:
+      source_architecture: <architecture-task-id>
+    artifacts:
+      task: agent/tasks/<task-id>.md
+      audit_log: agent/tasks/<task-id>.agents-audit.md
+      plan: agent/tasks/<task-id>.plan.md
+      coder_notes: agent/tasks/<task-id>.coder.md
+      test_report: agent/tasks/<task-id>.test.md
+      review_report: agent/tasks/<task-id>.review.md
+    source_architecture_resolution:
+      preferred: agent/done/<source-architecture-id>/<source-architecture-id>.arch.md
+      fallback: agent/tasks/<source-architecture-id>.arch.md
+    id_policy:
+      pattern: task-<nnn>-<slug>
+      forbid_letter_suffixed_children: true
+      rationale: every implementation task must be independently schedulable by the implementation pipeline
 
-optional_stages:
-  architect:
-    position: before_planner
-    when: task metadata explicitly sets architecture to required or the user explicitly requests architecture/design work
+  architecture:
+    description: Produce architecture and decompose it into implementation-ready tasks.
+    task_selection:
+      when:
+        - task metadata sets pipeline to architecture
+        - or legacy task metadata sets architecture to required
+        - or the user explicitly asks for architecture, design, or task decomposition
+    stages:
+      - supervisor
+      - architect
+      - task_splitter
+      - done
+    required_task_metadata:
+      pipeline: architecture
+      architecture: required
+    artifacts:
+      task: agent/tasks/<task-id>.md
+      audit_log: agent/tasks/<task-id>.agents-audit.md
+      architecture_design: agent/tasks/<task-id>.arch.md
+      split_report: agent/tasks/<task-id>.split.md
+      generated_tasks: agent/tasks/task-<nnn>-<slug>.md
+    generated_task_rules:
+      pipeline: implementation
+      architecture: not_requested
+      source_architecture: <architecture-task-id>
+      id_policy: standalone sequential task ids only
 
-handoff_artifacts:
-  task: agent/tasks/<task-id>.md
-  audit_log: agent/tasks/<task-id>.agents-audit.md
-  architecture_design: agent/tasks/<task-id>.arch.md
-  plan: agent/tasks/<task-id>.plan.md
-  coder_notes: agent/tasks/<task-id>.coder.md
-  test_report: agent/tasks/<task-id>.test.md
-  review_report: agent/tasks/<task-id>.review.md
+pipeline_selection:
+  prompt_hints:
+    architecture:
+      - architecture
+      - design
+      - boundaries
+      - split into tasks
+    implementation:
+      - implement
+      - fix
+      - work on task
+    e2e:
+      - e2e
+      - playwright
+      - end-to-end
+  future_pipelines:
+    e2e:
+      status: planned
+      note: reserve pipeline id `e2e` for a later dedicated testing pipeline
 
 agent_identity:
   first_chat_message_must_identify_role: true
@@ -40,6 +101,8 @@ audit_log:
 task_statuses:
   - queued
   - in_progress
+  - designing
+  - splitting
   - planning
   - implementing
   - testing
@@ -52,12 +115,16 @@ task_statuses:
 
 retry:
   max_cycles: 2
-  on_failure: supervisor classifies root cause and routes to the correct upstream agent
+  on_failure: supervisor classifies root cause and routes to the correct upstream agent or creates a separate architecture task when the issue is architectural
   on_max_retries_exceeded: status set to blocked, requires human intervention
 
 feedback_routing:
-  plan_issue: planner
-  implementation_issue: coder
-  test_gap: coder
-  domain_brain_missing: coder
-  architecture_issue: architect
+  implementation:
+    plan_issue: planner
+    implementation_issue: coder
+    test_gap: coder
+    domain_brain_missing: coder
+    architecture_gap: separate architecture task
+  architecture:
+    architecture_issue: architect
+    task_decomposition_issue: task_splitter

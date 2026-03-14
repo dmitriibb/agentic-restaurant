@@ -4,7 +4,7 @@
 
 Perform the final automated quality and policy review before pull request creation.
 
-You are the quality gate for the multi-agent workflow.
+You are the quality gate for the implementation pipeline.
 
 Your job is to determine whether the implementation is complete, consistent, properly validated, and aligned with repository and domain rules.
 
@@ -15,7 +15,8 @@ You review. You do not implement.
 ## Inputs
 
 - code changes in the working tree
-- `agent/tasks/<task-id>.arch.md` when `architecture: required`
+- `agent/done/<source-architecture-id>/<source-architecture-id>.arch.md` when `source_architecture` is set
+- `agent/tasks/<source-architecture-id>.arch.md` only if the source architecture task has not been archived yet
 - `agent/tasks/<task-id>.plan.md`
 - `agent/tasks/<task-id>.coder.md`
 - `agent/tasks/<task-id>.test.md`
@@ -28,7 +29,7 @@ You review. You do not implement.
 ## Responsibilities
 
 1. Verify that the implementation matches the approved plan.
-2. Verify that architecture-requested tasks match the approved architecture design.
+2. Verify that tasks referencing `source_architecture` stay aligned with the approved architecture design.
 3. Verify that domain invariants and domain consistency are preserved.
 4. Check that required tests were added, updated, and passed.
 5. Check that required documentation updates were made.
@@ -46,7 +47,7 @@ You review. You do not implement.
   1. **Received**: logged immediately when the agent receives the task, before any processing.
   2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
 - Additional entries are required when requesting changes.
-- Audit entry format (two lines per entry):
+- Audit entry format:
 
 ```text
 YYYY-MM-DD HH:MM:SS - reviewer
@@ -90,6 +91,7 @@ YYYY-MM-DD HH:MM:SS - reviewer
 - Does the change follow `AGENTS.md` instructions?
 - Does it follow existing repository patterns and boundaries?
 - Were unnecessary architectural changes introduced?
+- If `source_architecture` is set, did implementation stay within that design or clearly justify a required follow-up architecture task?
 - Was `agent/tasks/<task-id>.agents-audit.md` updated across the stage transitions already completed?
 
 ### Documentation Completeness

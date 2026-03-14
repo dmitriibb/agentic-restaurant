@@ -1,12 +1,14 @@
 # Task Template
 
 ```yaml
-id: task-001
-title: Short task title
+id: task-001-short-slug
+title: Short implementation task title
+pipeline: implementation
 status: queued
 priority: medium
 type: feature
 architecture: not_requested
+source_architecture:
 retry_count: 0
 created_at: YYYY-MM-DD
 requested_by: human
@@ -18,7 +20,13 @@ validation:
   - <command-or-check>
 ```
 
-`architecture` must stay `not_requested` unless the user explicitly asked for architecture or design work.
+`pipeline` must be `implementation` for executable work items.
+
+`architecture` must stay `not_requested` for implementation tasks. If the task comes from an approved architecture, set `source_architecture` instead of flipping `architecture` back to `required`.
+
+`source_architecture` is optional. When present, store the architecture task id only, for example `task-010-checkout-architecture`.
+
+Do not create implementation task ids with letter suffixes such as `task-009-A`. Use standalone sequential ids such as `task-011-migrate-db`.
 
 `status` valid values: `queued`, `in_progress`, `planning`, `implementing`, `testing`, `reviewing`, `changes_required`, `approved`, `pr_created`, `done`, `blocked`.
 
@@ -51,6 +59,7 @@ One short paragraph describing the desired outcome.
 
 - Related files:
 - Related docs:
+- Source architecture:
 - Related flows:
 - Risks or dependencies:
 
@@ -62,4 +71,5 @@ One short paragraph describing the desired outcome.
 
 - First visible chat message must identify the current role, for example `Working as planner agent.`
 - Append audit entries to `agent/tasks/<task-id>.agents-audit.md` when starting, handing off, retrying, blocking, and finishing work.
+- Resolve `source_architecture` from `agent/done/<source_architecture>/<source_architecture>.arch.md` first, with fallback to `agent/tasks/<source_architecture>.arch.md`.
 - <handoff note or implementation hint>
