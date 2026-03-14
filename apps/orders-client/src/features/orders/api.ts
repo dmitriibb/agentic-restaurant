@@ -6,6 +6,7 @@ export type OrderSubmitResponse = {
   requestId: string;
   status: string;
   totalAmount: number;
+  userDisplayName?: string;
 };
 
 export async function submitOrder(token: string, userId: number, lines: BasketLine[]): Promise<OrderSubmitResponse> {

@@ -1,8 +1,8 @@
-import type { UserSummary } from "./api";
+import type { ClientType, UserSummary } from "./api";
 
 export type SessionAuth = {
   token: string;
-  user: UserSummary;
+  user: UserSummary & { clientType?: ClientType };
 };
 
 export const AUTH_STORAGE_KEY = "orders-client-auth";
@@ -15,7 +15,7 @@ export function readAuthSession(): SessionAuth | null {
 
   try {
     const parsed = JSON.parse(raw) as SessionAuth;
-    if (!parsed.token || !parsed.user?.id) {
+    if (!parsed.token || !parsed.user?.id || !parsed.user?.login) {
       return null;
     }
     return parsed;

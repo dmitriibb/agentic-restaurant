@@ -1,22 +1,34 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
+vi.mock("./features/auth/appToken", () => ({
+  getAppToken: vi.fn().mockResolvedValue("app-token")
+}));
+
 describe("Orders client flows", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
     sessionStorage.clear();
   });
 
-  it("completes login, menu load, basket updates, and order submission", async () => {
+  it("shows both auth entry buttons", () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ items: [] })));
+
+    render(<App />);
+
+    expect(screen.getByRole("button", { name: "Login (Registered)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue as Guest" })).toBeInTheDocument();
+  });
+
+  it("completes registered login, menu load, basket updates, and order submission", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(
         jsonResponse({
           accessToken: "jwt-token",
           tokenType: "Bearer",
           expiresInSeconds: 3600,
-          user: { id: 1001, login: "demo-user" }
+          user: { id: 1001, login: "demo-user", displayName: "Demo User", clientType: "REGISTERED_USER" }
         })
       )
       .mockResolvedValueOnce(
@@ -32,17 +44,14 @@ describe("Orders client flows", () => {
           orderId: 900001,
           requestId: "req-123",
           status: "ACCEPTED",
-          totalAmount: 15.5
+          totalAmount: 15.5,
+          userDisplayName: "Demo User"
         })
       );
 
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>
-    );
+    render(<App />);
 
     fireEvent.change(screen.getByLabelText("Login"), { target: { value: "demo-user" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secret" } });
@@ -62,6 +71,7 @@ describe("Orders client flows", () => {
 
     await screen.findByTestId("order-confirmation");
     expect(screen.getByTestId("order-confirmation")).toHaveTextContent("#900001");
+    expect(screen.getByTestId("order-confirmation")).toHaveTextContent("Demo User");
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[0][0]).toContain("/api/v1/auth/login");
@@ -81,10 +91,46 @@ describe("Orders client flows", () => {
     });
   });
 
+  it("completes guest login flow and loads menu", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          accessToken: "guest-jwt",
+          tokenType: "Bearer",
+          expiresInSeconds: 86400,
+          user: { id: 5001, login: "guest-abc", displayName: "Walk In", clientType: "GUEST_USER" }
+        })
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          items: [{ id: 1, name: "Pizza", description: "Tomato", price: 12.5 }]
+        })
+      );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue as Guest" }));
+    fireEvent.change(screen.getByLabelText("Display Name"), { target: { value: "Walk In" } });
+    fireEvent.click(screen.getByRole("button", { name: "Start Guest Session" }));
+
+    await screen.findByTestId("auth-status");
+    await screen.findByText("Pizza");
+
+    expect(fetchMock.mock.calls[0][0]).toContain("/api/v1/auth/guests");
+    const guestRequest = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(guestRequest.headers).toMatchObject({ Authorization: "Bearer app-token" });
+    expect(JSON.parse(String(guestRequest.body))).toEqual({ displayName: "Walk In" });
+
+    const menuRequest = fetchMock.mock.calls[1][1] as RequestInit;
+    expect(menuRequest.headers).toMatchObject({ Authorization: "Bearer guest-jwt" });
+  });
+
   it("restores previous auth session from storage", async () => {
     sessionStorage.setItem(
       "orders-client-auth",
-      JSON.stringify({ token: "stored-token", user: { id: 42, login: "stored-user" } })
+      JSON.stringify({ token: "stored-token", user: { id: 42, login: "stored-user", clientType: "REGISTERED_USER" } })
     );
 
     const fetchMock = vi.fn().mockResolvedValue(
@@ -94,11 +140,7 @@ describe("Orders client flows", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>
-    );
+    render(<App />);
 
     expect(screen.getByTestId("auth-status")).toHaveTextContent("stored-user");
 

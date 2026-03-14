@@ -1,5 +1,6 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { login, type UserSummary } from "./features/auth/api";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { createGuestUser, login, type UserSummary } from "./features/auth/api";
+import { getAppToken } from "./features/auth/appToken";
 import { readAuthSession, writeAuthSession } from "./features/auth/session";
 import { upsertBasketLine, updateLineQuantity, type BasketLine } from "./features/basket/model";
 import { fetchMenu, type MenuItem } from "./features/menu/api";
@@ -10,12 +11,22 @@ function formatAmount(value: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 }
 
+type AuthEntryMode = "registered" | "guest";
+
+function displayUserName(user: UserSummary): string {
+  return user.displayName ?? user.login;
+}
+
 export function App() {
   const existingSession = readAuthSession();
   const [token, setToken] = useState<string>(existingSession?.token ?? "");
   const [user, setUser] = useState<UserSummary | null>(existingSession?.user ?? null);
+  const [authEntryMode, setAuthEntryMode] = useState<AuthEntryMode>("registered");
+
   const [loginValue, setLoginValue] = useState("");
   const [password, setPassword] = useState("");
+  const [guestDisplayName, setGuestDisplayName] = useState("");
+
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -35,6 +46,28 @@ export function App() {
 
   const isAuthenticated = Boolean(token && user);
 
+  useEffect(() => {
+    void getAppToken().catch((error) => {
+      console.error("Failed to initialize application token.", error);
+    });
+  }, []);
+
+  async function completeAuthentication(nextToken: string, nextUser: UserSummary): Promise<void> {
+    const session = { token: nextToken, user: nextUser };
+    setToken(nextToken);
+    setUser(nextUser);
+    writeAuthSession(session);
+
+    setMenuLoading(true);
+    try {
+      const items = await fetchMenu(nextToken);
+      setMenuItems(items);
+      setMenuError(null);
+    } finally {
+      setMenuLoading(false);
+    }
+  }
+
   async function onLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAuthLoading(true);
@@ -42,23 +75,34 @@ export function App() {
 
     try {
       const response = await login(loginValue, password);
-      const session = {
-        token: response.accessToken,
-        user: response.user
-      };
-      setToken(response.accessToken);
-      setUser(response.user);
-      writeAuthSession(session);
-
-      setMenuLoading(true);
-      const items = await fetchMenu(response.accessToken);
-      setMenuItems(items);
-      setMenuError(null);
+      await completeAuthentication(response.accessToken, response.user);
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Unexpected login error.");
     } finally {
       setAuthLoading(false);
-      setMenuLoading(false);
+    }
+  }
+
+  async function onGuestLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const normalizedDisplayName = guestDisplayName.trim();
+    if (!normalizedDisplayName || normalizedDisplayName.length > 100) {
+      setAuthError("Guest name is required and must be at most 100 characters.");
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      const appToken = await getAppToken();
+      const response = await createGuestUser(normalizedDisplayName, appToken);
+      await completeAuthentication(response.accessToken, response.user);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Guest login failed.");
+    } finally {
+      setAuthLoading(false);
     }
   }
 
@@ -106,6 +150,8 @@ export function App() {
     setAuthError(null);
     setMenuError(null);
     setSubmitError(null);
+    setAuthEntryMode("registered");
+    setGuestDisplayName("");
     writeAuthSession(null);
   }
 
@@ -133,34 +179,76 @@ export function App() {
           {isAuthenticated && user ? (
             <div className="status-panel" data-testid="auth-status">
               <p>
-                Signed in as <strong>{user.login}</strong> (user #{user.id})
+                Signed in as <strong>{displayUserName(user)}</strong> (user #{user.id})
               </p>
             </div>
           ) : (
-            <form className="auth-form" onSubmit={onLogin}>
-              <label>
-                Login
-                <input
-                  value={loginValue}
-                  onChange={(event) => setLoginValue(event.target.value)}
-                  autoComplete="username"
-                  required
-                />
-              </label>
-              <label>
-                Password
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
-              </label>
-              <button className="action" type="submit" disabled={authLoading}>
-                {authLoading ? "Signing in..." : "Sign In"}
-              </button>
-            </form>
+            <>
+              <div className="hero-actions" style={{ marginBottom: "1rem" }}>
+                <button
+                  className={authEntryMode === "registered" ? "action" : "action ghost"}
+                  type="button"
+                  onClick={() => {
+                    setAuthEntryMode("registered");
+                    setAuthError(null);
+                  }}
+                >
+                  Login (Registered)
+                </button>
+                <button
+                  className={authEntryMode === "guest" ? "action" : "action ghost"}
+                  type="button"
+                  onClick={() => {
+                    setAuthEntryMode("guest");
+                    setAuthError(null);
+                  }}
+                >
+                  Continue as Guest
+                </button>
+              </div>
+
+              {authEntryMode === "registered" ? (
+                <form className="auth-form" onSubmit={onLogin}>
+                  <label>
+                    Login
+                    <input
+                      value={loginValue}
+                      onChange={(event) => setLoginValue(event.target.value)}
+                      autoComplete="username"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Password
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      autoComplete="current-password"
+                      required
+                    />
+                  </label>
+                  <button className="action" type="submit" disabled={authLoading}>
+                    {authLoading ? "Signing in..." : "Sign In"}
+                  </button>
+                </form>
+              ) : (
+                <form className="auth-form" onSubmit={onGuestLogin}>
+                  <label>
+                    Display Name
+                    <input
+                      value={guestDisplayName}
+                      maxLength={100}
+                      onChange={(event) => setGuestDisplayName(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <button className="action" type="submit" disabled={authLoading}>
+                    {authLoading ? "Starting guest session..." : "Start Guest Session"}
+                  </button>
+                </form>
+              )}
+            </>
           )}
           {authError && <p className="error-text">{authError}</p>}
         </section>
@@ -239,10 +327,13 @@ export function App() {
           </div>
 
           {submitError && <p className="error-text">{submitError}</p>}
-          {lastOrder && (
+          {lastOrder && user && (
             <div className="status-panel" data-testid="order-confirmation">
               <p>
                 Order <strong>#{lastOrder.orderId}</strong> accepted ({lastOrder.status}).
+              </p>
+              <p>
+                User: <strong>{lastOrder.userDisplayName ?? displayUserName(user)}</strong> (id #{user.id})
               </p>
             </div>
           )}

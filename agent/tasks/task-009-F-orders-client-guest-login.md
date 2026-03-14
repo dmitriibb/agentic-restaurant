@@ -3,7 +3,7 @@
 ```yaml
 id: task-009-F-orders-client-guest-login
 title: orders-client guest login flow and app token management
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested
