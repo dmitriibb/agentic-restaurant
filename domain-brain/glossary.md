@@ -4,9 +4,29 @@
 
 A JWT issued by `users-service` and sent by the client in the `Authorization` header.
 
+## ApplicationTokenPool
+
+A bounded pool of application user identities used to issue JWTs for service/application instances, with inactivity-based reclamation.
+
+## ApplicationUser
+
+A caller with `clientType = APPLICATION` authenticated via application name and secret.
+
 ## Basket
 
 The client-side collection of selected menu items and quantities before order submission.
+
+## ClientType
+
+A token/user classification enum with values `REGISTERED_USER`, `GUEST_USER`, and `APPLICATION`.
+
+## DisplayName
+
+A human-readable name associated with a user, especially guest users, shown in order flows.
+
+## GuestUser
+
+A walk-in customer account created on demand with a display name and no password.
 
 ## MenuItem
 
@@ -30,7 +50,7 @@ A platform user authenticated by `users-service`.
 
 ## User Authentication
 
-The flow where a user logs in and receives a one-hour JWT.
+The flow where a caller receives a JWT from `users-service` and uses it for protected requests.
 
 ## Shared MySQL Instance
 

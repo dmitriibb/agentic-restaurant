@@ -3,7 +3,7 @@
 ```yaml
 id: task-009-G-domain-documentation-updates
 title: Domain documentation updates for user types
-status: queued
+status: done
 priority: medium
 type: documentation
 architecture: not_requested

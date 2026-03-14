@@ -89,6 +89,10 @@ components:
         totalAmount:
           type: number
           format: double
+        userDisplayName:
+          type: string
+          nullable: true
+          description: Display name resolved from token validation and persisted with the order.
     ErrorResponse:
       type: object
       required: [error]

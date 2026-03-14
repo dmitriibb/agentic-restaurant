@@ -3,7 +3,7 @@
 ```yaml
 id: task-009-E-backend-service-startup-auth
 title: Backend service startup auth and inter-service JWT
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested
@@ -145,3 +145,4 @@ Implement application JWT acquisition at startup for menu-service and orders-ser
 - The `AuthValidationClient` in orders-service already parses the validation response. You need to add `clientType` and `displayName` to the parsed response model (e.g., in `ClientModels.kt`).
 - For the orders table migration, add the changeset to the orders-service changelog. Follow the existing naming convention (e.g., `002-add-user-display-name.yaml`).
 - In `docker-compose.yml`, the environment variables should use `APP_AUTH_NAME` and `APP_AUTH_SECRET` as the variable names, mapping to `app.auth.application-name` and `app.auth.application-secret` in Spring config. Also add `VITE_APP_NAME` and `VITE_APP_SECRET` for orders-client even though that service's code changes come in Task F.
+

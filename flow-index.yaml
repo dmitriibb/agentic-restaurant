@@ -28,7 +28,11 @@ flows:
       - domain-brain/flows/user-authentication.md
     paths:
       - apps/users-service
+      - apps/users-service/src/main/kotlin/com/agentic/restaurant/users/api/AuthController.kt
       - apps/orders-client/src/features/auth
+      - apps/orders-client/src/features/auth/appToken.ts
+      - apps/menu-service/src/main/java/com/agentic/restaurant/menu/application/StartupAuthClient.java
+      - apps/orders-service/src/main/kotlin/com/agentic/restaurant/orders/application/StartupAuthClient.kt
     entities:
       - UserAccount
       - AccessToken
