@@ -24,6 +24,10 @@ infrastructure:
       image: rabbitmq:4.1-management
       exchanges:
         - restaurant.production.v1
+      queues:
+        - production-service.item-requested.v1
+      dead_letter_queues:
+        - production-service.item-requested.dlq
   conventions:
     new_backend_services: go
     existing_services: java/kotlin (Spring Boot)
