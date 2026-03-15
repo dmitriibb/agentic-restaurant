@@ -22,7 +22,7 @@ Different AI coding tools provide different mechanisms for creating fresh agent 
 |----------|-----------|---------------|
 | GitHub Copilot (VS Code) | `runSubagent` tool | Call the `runSubagent` tool with the agent prompt |
 | Codex (VS Code / CLI) | Native multi-agent orchestration | Use the platform's built-in agent delegation (Codex handles sub-agent spawning at the infrastructure level) |
-| OpenCode | Platform-dependent | Use the tool or mechanism available for spawning independent agent contexts |
+| OpenCode | `Task` tool (subagent) | Call the `Task` tool with `subagent_type: "general"` and a prompt containing the full agent context. Each `Task` call creates a fresh, isolated context window. The supervisor MUST use `Task` — never role-play agents in its own context. |
 | Other tools | Check available tools | Look for any tool that creates an isolated agent execution context |
 
 **If no sub-agent mechanism is available**: The agent must state this limitation clearly in the audit log and proceed with the best available isolation (e.g., explicit context reset). It must NOT silently role-play multiple agents without disclosure.
@@ -44,13 +44,32 @@ The context passed to the sub-agent MUST include:
 
 ### 2. Invoke the sub-agent
 
-Use the platform-appropriate mechanism from the table above to delegate. For GitHub Copilot, this is:
+Use the platform-appropriate mechanism from the table above to delegate.
+
+For **GitHub Copilot**, this is:
 
 ```
 runSubagent with prompt containing all context above
 ```
 
-For Codex and other platforms, use the native delegation mechanism — the key requirement is a **fresh execution context**, not a specific tool name.
+For **OpenCode**, this is:
+
+```
+Task tool call with:
+  subagent_type: "general"
+  description: "<role> stage for <task-id>"
+  prompt: "<full sub-agent prompt from template above>"
+```
+
+Each `Task` call spawns a new agent session with its own independent context window. The sub-agent does NOT inherit the supervisor's conversation history. The supervisor receives a single text message back when the sub-agent finishes.
+
+**OpenCode-specific rules:**
+- The supervisor MUST use the `Task` tool for every pipeline stage. There are no exceptions.
+- The supervisor MUST NOT read an agent's `AGENT.md` and perform the work itself. That is role-playing, not delegation.
+- The supervisor MUST NOT write audit log entries on behalf of a sub-agent. If an audit entry exists but no `Task` call was made for that stage, the execution is invalid.
+- If the supervisor's context is growing large, this is expected — each `Task` call offloads the heavy work to a fresh context. The supervisor only accumulates short result summaries.
+
+For **Codex** and other platforms, use the native delegation mechanism — the key requirement is a **fresh execution context**, not a specific tool name.
 
 ### 3. Process the result
 
@@ -63,7 +82,7 @@ For Codex and other platforms, use the native delegation mechanism — the key r
 
 ## Sub-Agent Prompt Template
 
-When the platform requires the supervisor to construct a prompt for the sub-agent (e.g., Copilot's `runSubagent`), use this template. Fill in the bracketed values:
+When the platform requires the supervisor to construct a prompt for the sub-agent (e.g., Copilot's `runSubagent`, OpenCode's `Task` tool), use this template. Fill in the bracketed values:
 
 ```
 You are the [ROLE] agent. Read and follow your instructions from agent/[ROLE]/AGENT.md and the global rules from AGENTS.md.
