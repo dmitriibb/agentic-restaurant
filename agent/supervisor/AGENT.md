@@ -134,10 +134,10 @@ Before executing ANY pipeline stage, the supervisor must load and apply these sk
 ### run-pipeline-stage (`skills/run-pipeline-stage/SKILL.md`)
 
 - Read this skill before handing off to any execution-stage agent.
-- Use `runSubagent` to invoke each pipeline stage (planner, coder, tester, reviewer, architect, task-splitter).
+- Use the platform-appropriate mechanism to invoke each pipeline stage in a fresh agent context (e.g., `runSubagent` in Copilot, native orchestration in Codex).
 - The supervisor MUST NOT role-play or simulate another agent's work within its own context.
-- Each subagent prompt must include: the agent role, AGENT.md path, task file path, all relevant artifacts, and the instruction to use get-local-time for timestamps.
-- Failing to use `runSubagent` for a pipeline stage makes the entire execution invalid.
+- Each sub-agent context must include: the agent role, AGENT.md path, task file path, all relevant artifacts, and the instruction to use get-local-time for timestamps.
+- Failing to delegate a pipeline stage to a fresh agent context makes the entire execution invalid.
 
 ---
 
