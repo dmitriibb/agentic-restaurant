@@ -13,6 +13,7 @@ Repository-level rules for all AI agents (single or multi-agent mode).
 7. This repository is a generic foundation. `domain-brain/` and `flow-index.yaml` may remain template-like until the first concrete project flow is introduced. When adapting this repo to a real product, seed project-specific domain knowledge before implementing business logic.
 8. In multi-agent execution, keep a per-task audit log at `agent/tasks/<task-id>.agents-audit.md` and append entries whenever an agent starts work, hands off work, retries work, blocks work, or completes its stage.
 9. The first chat message from each fresh agent must explicitly identify the role, for example: `Working as planner agent.`
+10. Supervisor must run `agent/supervisor/validate-task-pipeline.ps1 -TaskId <task-id>` before handoff/archive, and use `-Archive` only after status is `done`.
 
 ## Multi-Agent Pipeline
 

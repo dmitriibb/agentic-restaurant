@@ -66,6 +66,24 @@ The files in `agent/tasks/` are the message bus. Artifacts are the inter-agent p
 
 The audit file is part of that protocol. It is the human-visible execution history for the task.
 
+## Supervisor Validation Gate
+
+Before archiving any task, run:
+
+```powershell
+powershell -File agent/supervisor/validate-task-pipeline.ps1 -TaskId <task-id>
+```
+
+This validates required artifacts and audit entries for the task pipeline.
+
+To archive only after validation passes:
+
+```powershell
+powershell -File agent/supervisor/validate-task-pipeline.ps1 -TaskId <task-id> -Archive
+```
+
+This hard gate prevents skipping planner/tester/reviewer stages in implementation tasks and prevents partial multi-agent execution from being archived as complete.
+
 ---
 
 ## Roles

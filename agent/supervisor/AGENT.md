@@ -33,6 +33,7 @@ You route work to the correct agents, enforce state transitions, and decide whet
 8. Enforce retry limits and stop the pipeline when limits are exceeded.
 9. Prepare successful implementation tasks for branch/PR handoff.
 10. Archive completed task artifacts into `agent/done/<task-id>/`.
+11. Run `agent/supervisor/validate-task-pipeline.ps1 -TaskId <task-id>` before PR handoff and `-Archive` only after status is `done`.
 
 ---
 
@@ -149,7 +150,9 @@ Implementation pipeline:
 5. tester -> status: `testing`
 6. reviewer -> status: `reviewing`
 7. PR handoff -> status: `pr_created`
-8. archive task -> status: `done`
+8. run `validate-task-pipeline.ps1 -TaskId <task-id>`
+9. set task status: `done`
+10. run `validate-task-pipeline.ps1 -TaskId <task-id> -Archive`
 
 Architecture pipeline:
 

@@ -4,7 +4,7 @@
 id: task-011-bootstrap-production-service-and-rabbitmq
 title: Bootstrap production-service and RabbitMQ foundation
 pipeline: implementation
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested
