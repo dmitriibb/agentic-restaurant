@@ -2,6 +2,33 @@
 
 Repository-level rules for all AI agents (single or multi-agent mode).
 
+## Routing Gate (Mandatory)
+
+Apply this gate before any file reads, planning, or implementation.
+
+1. Precedence rules (deterministic):
+   - If prompt starts with `multi-agent implementation` -> ALWAYS run implementation pipeline as `supervisor` first.
+   - If prompt starts with `multi-agent architecture` -> ALWAYS run architecture pipeline as `supervisor` first.
+   - Otherwise -> run default single-agent mode.
+2. In multi-agent mode, non-supervisor roles cannot start directly.
+3. Any run that violates this gate is invalid and must be restarted from `supervisor`.
+
+## First Message Contract
+
+The first assistant message must include role and route confirmation.
+
+- Multi-agent implementation: `Working as supervisor agent.`
+- Multi-agent architecture: `Working as supervisor agent.`
+- Default mode: `Working as default agent.`
+
+The same first message must also explicitly confirm:
+
+- detected mode
+- selected pipeline
+- target task id (if provided by user)
+
+If any required field is missing, stop and restart with a valid first message.
+
 ## Global Rules
 
 1. Read `flow-index.yaml` before changing domain-related code.
@@ -18,25 +45,33 @@ Repository-level rules for all AI agents (single or multi-agent mode).
 
 ### Default agent
 
-If Agents flow is not mentioned explicitly - work as a default all-purpose agent
+If Agents flow is not mentioned explicitly, work as a default all-purpose agent.
 
 ### Multi-Agent Implementation
 
-- When to use: if prompt / input start with "multi-agent implementation" or something similar
+- When to use: if prompt / input starts with `multi-agent implementation` (exact prefix match, case-insensitive)
 - Implementation pipeline: `tasks -> supervisor -> planner -> coder -> tester -> reviewer -> PR handoff -> done`
 
 
 ### Multi-Agent Architecture
 
-- When to use: if prompt / input start with "multi-agent architecture" or something similar
+- When to use: if prompt / input starts with `multi-agent architecture` (exact prefix match, case-insensitive)
 - Architecture pipeline: `tasks -> supervisor -> architect -> task-splitter -> done`
 
 Pipeline routing rules:
 
+- Routing gate precedence in this file is mandatory and overrides heuristic routing.
+- In multi-agent mode, only `agent/supervisor` may initiate the pipeline.
 - `agent/architect` is not part of the implementation pipeline.
 - Run the architecture pipeline only when the user explicitly requests architecture or design work in the task or prompt.
 - Do not invoke `agent/architect` automatically based on agent judgment alone.
 - The architecture pipeline must end by creating implementation-ready task files with standalone numeric task ids such as `task-011-migrate-db`, not letter-suffixed child ids such as `task-009-A`.
+
+Routing examples:
+
+- `multi-agent implementation - work on task 012, when finish - commit changes` -> implementation pipeline via `supervisor`.
+- `multi-agent architecture - design event contracts for production board` -> architecture pipeline via `supervisor`.
+- `implement task 012` -> default mode (single agent), unless user explicitly uses a multi-agent trigger prefix.
 
 
 Agent directories:
@@ -158,3 +193,11 @@ If an implementation task exposes a missing or incorrect architecture decision, 
 If any required implementation stage was skipped entirely, the task is not complete even if code was written. The supervisor must resume from the earliest missing stage and continue forward, or mark the task `blocked`. Retroactive artifact creation does not satisfy this requirement.
 
 See `agent/supervisor/AGENT.md` for the full routing table and `agent/pipeline.yaml` for the machine-readable definition.
+
+## Routing Validation (Recommended)
+
+Add a lightweight startup validator that fails the run when:
+
+1. Prompt matches a multi-agent trigger prefix but first assistant line is not `Working as supervisor agent.`
+2. First assistant message does not include detected mode, selected pipeline, and task id (when provided).
+3. `agent/tasks/<task-id>.agents-audit.md` is not created immediately for multi-agent execution.
