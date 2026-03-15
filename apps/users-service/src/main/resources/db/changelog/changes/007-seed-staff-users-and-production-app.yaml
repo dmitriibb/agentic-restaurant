@@ -1,0 +1,85 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-seed-production-app
+      author: codex
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: "SELECT COUNT(*) FROM applications WHERE application_name = 'production-service'"
+      changes:
+        - insert:
+            tableName: applications
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 4
+              - column:
+                  name: application_name
+                  value: production-service
+              - column:
+                  name: secret_hash
+                  value: "pbkdf2$120000$2mkEPHI7JfSz1DkqIP7gvA==$T5HP/ZecBq15NpGHwx58JtfBblouVRCYw8l1efsabpE="
+              - column:
+                  name: max_pool_size
+                  valueNumeric: 30
+              - column:
+                  name: status
+                  value: ACTIVE
+  - changeSet:
+      id: 007-seed-staff-users
+      author: codex
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: "SELECT COUNT(*) FROM users WHERE login = 'staff1'"
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1007
+              - column:
+                  name: login
+                  value: staff1
+              - column:
+                  name: password_hash
+                  value: "pbkdf2$120000$STxfX1Ekl1CD6s/yUnVLaw==$0YoRpQ7cpkUNOK/XBy7wXPQbdHt1XpKNnYpvuf290b0="
+              - column:
+                  name: status
+                  value: ACTIVE
+              - column:
+                  name: roles
+                  value: STAFF
+              - column:
+                  name: client_type
+                  value: REGISTERED_USER
+              - column:
+                  name: display_name
+                  value: Staff One
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1008
+              - column:
+                  name: login
+                  value: manager1
+              - column:
+                  name: password_hash
+                  value: "pbkdf2$120000$WKXypXhDwHHNi/9q4nJaag==$RvGo95PsjrLSpxe8v76gVPESE5+vOHPEiw3HGpU5A3w="
+              - column:
+                  name: status
+                  value: ACTIVE
+              - column:
+                  name: roles
+                  value: MANAGER
+              - column:
+                  name: client_type
+                  value: REGISTERED_USER
+              - column:
+                  name: display_name
+                  value: Manager One

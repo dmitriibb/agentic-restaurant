@@ -204,6 +204,8 @@ services:
       PRODUCTION_ITEM_REQUESTED_ROUTING_KEY: item.requested
       STARTUP_TIMEOUT: 10s
       READINESS_TIMEOUT: 2s
+      USERS_SERVICE_URL: http://users-service:8081
+      USERS_SERVICE_TOKEN: local-dev-token
     depends_on:
       mysql:
         condition: service_healthy

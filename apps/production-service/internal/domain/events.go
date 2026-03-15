@@ -50,3 +50,27 @@ type OrderStatusOutbound struct {
 	ReadyItemCount int    `json:"readyItemCount"`
 	OccurredAt     string `json:"occurredAt"`
 }
+
+// ItemStatusChangedOutbound is the outbound payload for a staff-driven item status change.
+type ItemStatusChangedOutbound struct {
+	OrderID          int64  `json:"orderId"`
+	ItemID           string `json:"itemId"`
+	LineNumber       int    `json:"lineNumber"`
+	UnitSequence     int    `json:"unitSequence"`
+	MenuItemName     string `json:"menuItemName"`
+	Status           string `json:"status"`
+	StaffUserID      int64  `json:"staffUserId"`
+	StaffDisplayName string `json:"staffDisplayName"`
+	OccurredAt       string `json:"occurredAt"`
+}
+
+// OrderReadyOutbound is the outbound payload when all items in an order are ready.
+type OrderReadyOutbound struct {
+	OrderID        int64  `json:"orderId"`
+	RequestID      string `json:"requestId"`
+	Status         string `json:"status"`
+	ReadyAt        string `json:"readyAt"`
+	TotalItemCount int    `json:"totalItemCount"`
+	ReadyItemCount int    `json:"readyItemCount"`
+	OccurredAt     string `json:"occurredAt"`
+}

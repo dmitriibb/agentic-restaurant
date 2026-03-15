@@ -27,8 +27,10 @@ type Config struct {
 	RabbitQueue     string
 	RabbitDLQ       string
 	RabbitRouteKey  string
-	StartupTimeout  time.Duration
-	ReadinessTimout time.Duration
+	StartupTimeout    time.Duration
+	ReadinessTimout   time.Duration
+	UsersServiceURL   string
+	UsersServiceToken string
 }
 
 func Load() (Config, error) {
@@ -51,8 +53,10 @@ func Load() (Config, error) {
 		RabbitQueue:     strFromEnv("PRODUCTION_ITEM_REQUESTED_QUEUE", "production-service.item-requested.v1"),
 		RabbitDLQ:       strFromEnv("PRODUCTION_ITEM_REQUESTED_DLQ", "production-service.item-requested.dlq"),
 		RabbitRouteKey:  strFromEnv("PRODUCTION_ITEM_REQUESTED_ROUTING_KEY", "item.requested"),
-		StartupTimeout:  durationFromEnv("STARTUP_TIMEOUT", 10*time.Second),
-		ReadinessTimout: durationFromEnv("READINESS_TIMEOUT", 2*time.Second),
+		StartupTimeout:    durationFromEnv("STARTUP_TIMEOUT", 10*time.Second),
+		ReadinessTimout:   durationFromEnv("READINESS_TIMEOUT", 2*time.Second),
+		UsersServiceURL:   strFromEnv("USERS_SERVICE_URL", "http://users-service:8081"),
+		UsersServiceToken: strFromEnv("USERS_SERVICE_TOKEN", "local-dev-token"),
 	}
 
 	if err := cfg.Validate(); err != nil {

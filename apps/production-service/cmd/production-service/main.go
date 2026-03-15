@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"agentic/restaurant/production-service/internal/api"
+	"agentic/restaurant/production-service/internal/auth"
 	"agentic/restaurant/production-service/internal/config"
 	"agentic/restaurant/production-service/internal/consumer"
 	"agentic/restaurant/production-service/internal/health"
@@ -91,6 +93,12 @@ func main() {
 
 	mux := http.NewServeMux()
 	health.Handlers{MySQL: mysqlClient, RabbitMQ: rabbitClient, ReadinessTimout: cfg.ReadinessTimout}.Register(mux)
+
+	// Create auth client and API handlers
+	authClient := auth.NewClient(cfg.UsersServiceURL, cfg.UsersServiceToken)
+	authMiddleware := auth.RequireStaffRole(authClient)
+	apiHandlers := api.NewHandlers(productionStore, logger)
+	apiHandlers.Register(mux, authMiddleware)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),

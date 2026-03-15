@@ -4,7 +4,7 @@
 id: task-014-add-staff-auth-and-production-command-api
 title: Add staff auth and production command API
 pipeline: implementation
-status: queued
+status: approved
 priority: high
 type: feature
 architecture: not_requested
