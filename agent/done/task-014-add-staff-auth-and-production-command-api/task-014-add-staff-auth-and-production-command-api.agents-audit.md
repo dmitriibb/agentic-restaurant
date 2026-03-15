@@ -39,3 +39,9 @@ completed review: APPROVED — found and fixed one blocking issue (silent JSON m
 
 2026-03-15 10:22:01 - supervisor
 task status changed from reviewing to approved, proceeding to PR handoff
+
+2026-03-15 10:23:00 - supervisor
+PR handoff complete: committed as d4f0852 feat(task-014), 20 files changed, 1750 insertions
+
+2026-03-15 10:23:30 - supervisor
+task archived to agent/done/task-014-add-staff-auth-and-production-command-api/, status set to done
