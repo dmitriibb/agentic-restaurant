@@ -4,7 +4,7 @@
 id: task-013-implement-production-state-store-and-consumers
 title: Implement production state store and RabbitMQ consumers
 pipeline: implementation
-status: pr_created
+status: done
 priority: high
 type: feature
 architecture: not_requested
