@@ -10,7 +10,7 @@ Repository-level rules for all AI agents (single or multi-agent mode).
 4. Include or update tests for behavior changes.
 5. Keep changes scoped to the task; avoid unrelated refactors.
 6. Preserve repository conventions and existing project structure.
-7. In multi-agent execution, keep a per-task audit log at `agent/tasks/<task-id>.agents-audit.md` and append entries whenever an agent starts work, hands off work, retries work, blocks work, or completes its stage.
+7. In multi-agent execution, keep a per-task audit log at `agent/tasks/<task-id>.agents-audit.md` during execution and archive it with the task on completion.
 8. The first chat message from each fresh agent must explicitly identify the role, for example: `Working as planner agent.`
 
 
@@ -18,7 +18,7 @@ Repository-level rules for all AI agents (single or multi-agent mode).
 
 ### Default agent
 
-If Agents flow is not metioned explicitly - work as a default all-purpose agent
+If Agents flow is not mentioned explicitly - work as a default all-purpose agent
 
 ### Multi-Agent Implementation
 
@@ -26,10 +26,10 @@ If Agents flow is not metioned explicitly - work as a default all-purpose agent
 - Implementation pipeline: `tasks -> supervisor -> planner -> coder -> tester -> reviewer -> PR handoff -> done`
 
 
-### Multi-Agent Artchitecture
+### Multi-Agent Architecture
 
 - When to use: if prompt / input start with "multi-agent architecture" or something similar
-- Implementation pipeline:`tasks -> architect -> task-splitter -> done`
+- Architecture pipeline: `tasks -> supervisor -> architect -> task-splitter -> done`
 
 Pipeline routing rules:
 
@@ -114,12 +114,14 @@ YYYY-MM-DD HH:MM:SS - <agent-name>
 <short action description>
 ```
 
-Every agent must log exactly two entries per normal stage execution:
+The supervisor is the audit-log exception. It appends lifecycle entries whenever it picks up a task, changes status, hands work to another stage, routes retry feedback, blocks a task, marks PR handoff, or archives a task.
+
+Execution-stage agents (`architect`, `task-splitter`, `planner`, `coder`, `tester`, `reviewer`) must log exactly two entries per normal stage execution:
 
 1. **Received**: logged immediately when the agent receives the task, before any processing.
 2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
 
-Additional entries are required when:
+Additional execution-stage agent entries are required when:
 
 - receiving retry feedback
 - blocking the task
