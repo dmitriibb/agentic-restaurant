@@ -17,6 +17,7 @@ Current flows are captured in `flow-index.yaml` and documented in `domain-brain/
 - `user_authentication`
 - `menu_browsing`
 - `order_submission`
+- `order_production`
 
 ## Authorization Model (Current)
 
@@ -28,7 +29,6 @@ Current flows are captured in `flow-index.yaml` and documented in `domain-brain/
 
 Planned domains include:
 
-- production line / kitchen workflow
 - payments
 - inventory
 - reporting and analytics
@@ -65,7 +65,27 @@ Run all services via Compose:
 
 Then open:
 
-- UI: `http://localhost`
+- Orders UI: `http://localhost`
+- Staff UI: `http://localhost:8085`
 - Users Swagger: `http://localhost:8081/swagger-ui.html`
 - Menu Swagger: `http://localhost:8082/swagger-ui.html`
 - Orders Swagger: `http://localhost:8083/swagger-ui.html`
+- Production health: `http://localhost:8084/health/ready`
+- RabbitMQ UI: `http://localhost:15672` (`guest` / `guest`)
+
+## Production Pipeline Validation
+
+Run the cross-service smoke check after the stack is up:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tests/production-pipeline-smoke.ps1
+```
+
+The script validates:
+
+- readiness for `users-service`, `menu-service`, `orders-service`, `production-service`, and `staff-client`
+- RabbitMQ queue topology for production intake
+- accepted order handoff from `orders-service` into `production-service`
+- staff pickup and ready commands leading to a derived `READY` production order state
+
+You can override credentials and base URLs with script parameters if your local setup differs.

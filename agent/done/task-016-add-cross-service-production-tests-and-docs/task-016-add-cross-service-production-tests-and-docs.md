@@ -4,7 +4,7 @@
 id: task-016-add-cross-service-production-tests-and-docs
 title: Add cross-service production tests and docs
 pipeline: implementation
-status: queued
+status: done
 priority: medium
 type: integration
 architecture: not_requested

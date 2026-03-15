@@ -319,6 +319,163 @@ describe("Staff client flows", () => {
     });
   });
 
+  it("sends ready command and refreshes order to READY", async () => {
+    sessionStorage.setItem(
+      "staff-client-auth",
+      JSON.stringify({ token: "stored-token", user: { id: 2001, login: "staff1", displayName: "Staff One" } })
+    );
+
+    const fetchMock = vi.fn()
+      // Initial board load
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            OrderID: 9100,
+            ExternalRequestID: "req-abc",
+            UserID: 1001,
+            UserDisplayName: "Demo User",
+            Status: "IN_PROGRESS",
+            TotalItemCount: 1,
+            ReadyItemCount: 0,
+            BlockedItemCount: 0,
+            CreatedAt: "2026-03-14T13:47:40Z",
+            UpdatedAt: "2026-03-14T13:47:40Z",
+            ReadyAt: null,
+            Version: 2
+          }
+        ])
+      )
+      // Order detail load
+      .mockResolvedValueOnce(
+        jsonResponse({
+          order: {
+            OrderID: 9100,
+            ExternalRequestID: "req-abc",
+            UserID: 1001,
+            UserDisplayName: "Demo User",
+            Status: "IN_PROGRESS",
+            TotalItemCount: 1,
+            ReadyItemCount: 0,
+            BlockedItemCount: 0,
+            CreatedAt: "2026-03-14T13:47:40Z",
+            UpdatedAt: "2026-03-14T13:47:40Z",
+            ReadyAt: null,
+            Version: 2
+          },
+          items: [
+            {
+              ID: "item-1",
+              OrderID: 9100,
+              LineNumber: 1,
+              UnitSequence: 1,
+              SourceItemKey: "9100-1-1",
+              MenuItemID: 55,
+              MenuItemName: "Margherita Pizza",
+              StationKey: "kitchen",
+              Status: "IN_PROGRESS",
+              ClaimedByUserID: 2001,
+              ClaimedByDisplayName: "Staff One",
+              BlockedReason: null,
+              CreatedAt: "2026-03-14T13:47:40Z",
+              UpdatedAt: "2026-03-14T13:47:40Z",
+              ClaimedAt: "2026-03-14T13:48:00Z",
+              ReadyAt: null,
+              Version: 2
+            }
+          ]
+        })
+      )
+      // Ready command
+      .mockResolvedValueOnce(
+        jsonResponse({
+          itemId: "item-1",
+          orderId: 9100,
+          status: "READY",
+          command: "ready",
+          executedBy: "Staff One"
+        })
+      )
+      // Detail reload after command
+      .mockResolvedValueOnce(
+        jsonResponse({
+          order: {
+            OrderID: 9100,
+            ExternalRequestID: "req-abc",
+            UserID: 1001,
+            UserDisplayName: "Demo User",
+            Status: "READY",
+            TotalItemCount: 1,
+            ReadyItemCount: 1,
+            BlockedItemCount: 0,
+            CreatedAt: "2026-03-14T13:47:40Z",
+            UpdatedAt: "2026-03-14T13:49:00Z",
+            ReadyAt: "2026-03-14T13:49:00Z",
+            Version: 3
+          },
+          items: [
+            {
+              ID: "item-1",
+              OrderID: 9100,
+              LineNumber: 1,
+              UnitSequence: 1,
+              SourceItemKey: "9100-1-1",
+              MenuItemID: 55,
+              MenuItemName: "Margherita Pizza",
+              StationKey: "kitchen",
+              Status: "READY",
+              ClaimedByUserID: 2001,
+              ClaimedByDisplayName: "Staff One",
+              BlockedReason: null,
+              CreatedAt: "2026-03-14T13:47:40Z",
+              UpdatedAt: "2026-03-14T13:49:00Z",
+              ClaimedAt: "2026-03-14T13:48:00Z",
+              ReadyAt: "2026-03-14T13:49:00Z",
+              Version: 3
+            }
+          ]
+        })
+      )
+      // Board reload after command
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            OrderID: 9100,
+            ExternalRequestID: "req-abc",
+            UserID: 1001,
+            UserDisplayName: "Demo User",
+            Status: "READY",
+            TotalItemCount: 1,
+            ReadyItemCount: 1,
+            BlockedItemCount: 0,
+            CreatedAt: "2026-03-14T13:47:40Z",
+            UpdatedAt: "2026-03-14T13:49:00Z",
+            ReadyAt: "2026-03-14T13:49:00Z",
+            Version: 3
+          }
+        ])
+      );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByTestId("order-9100");
+    fireEvent.click(screen.getByTestId("order-9100"));
+    await screen.findByTestId("item-item-1");
+    fireEvent.click(screen.getByTestId("ready-item-1"));
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(5);
+    });
+
+    const readyCall = fetchMock.mock.calls[2];
+    expect(readyCall[0]).toContain("/api/v1/production/items/item-1/ready");
+    expect((readyCall[1] as RequestInit).method).toBe("POST");
+    expect((readyCall[1] as RequestInit).headers).toMatchObject({
+      Authorization: "Bearer stored-token"
+    });
+  });
+
   it("restores session from storage", async () => {
     sessionStorage.setItem(
       "staff-client-auth",

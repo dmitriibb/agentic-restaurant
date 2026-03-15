@@ -174,6 +174,21 @@ class OrdersServiceApplicationTests {
             Int::class.java,
         )!!
         assertThat(eventTypeCount).isEqualTo(3)
+
+        val payloads = jdbcTemplate.queryForList(
+            "SELECT payload_json FROM order_outbox_events ORDER BY created_at ASC",
+            String::class.java,
+        )
+        assertThat(payloads).hasSize(3)
+        assertThat(payloads).allSatisfy { payload ->
+            assertThat(payload).contains("\"eventType\":\"production.item.requested.v1\"")
+            assertThat(payload).contains("\"orderId\":$orderId")
+            assertThat(payload).contains("\"requestId\":\"$requestId\"")
+            assertThat(payload).contains("\"totalItemCount\":3")
+        }
+        assertThat(payloads.count { it.contains("\"lineNumber\":1") && it.contains("\"unitSequence\":1") }).isEqualTo(1)
+        assertThat(payloads.count { it.contains("\"lineNumber\":1") && it.contains("\"unitSequence\":2") }).isEqualTo(1)
+        assertThat(payloads.count { it.contains("\"lineNumber\":2") && it.contains("\"unitSequence\":1") }).isEqualTo(1)
     }
 
     @Test

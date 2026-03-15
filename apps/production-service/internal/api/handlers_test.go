@@ -31,6 +31,9 @@ type mockStore struct {
 	insertOutboxErr    error
 	getOrderInTxResult *domain.ProductionOrder
 	getOrderInTxErr    error
+	lastOrderStatus    string
+	lastOrderReadyAt   *string
+	outboxRecords      []domain.OutboxRecord
 }
 
 type mockTx struct{}
@@ -99,10 +102,13 @@ func (s *mockStore) CountItemsByStatus(ctx context.Context, tx domain.TxHandle, 
 }
 
 func (s *mockStore) UpdateOrderStatus(ctx context.Context, tx domain.TxHandle, orderID int64, status string, counts domain.ItemStatusCounts, readyAt *string) error {
+	s.lastOrderStatus = status
+	s.lastOrderReadyAt = readyAt
 	return s.updateOrderErr
 }
 
 func (s *mockStore) InsertOutboxRecord(ctx context.Context, tx domain.TxHandle, record *domain.OutboxRecord) error {
+	s.outboxRecords = append(s.outboxRecords, *record)
 	return s.insertOutboxErr
 }
 
@@ -376,4 +382,64 @@ func TestBlockWithReason(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
+}
+
+func TestReadyCommandDerivesOrderReadyAndWritesOutboxEvents(t *testing.T) {
+	store := &mockStore{
+		getItemResult: &domain.ProductionItem{
+			ID:           "item-1",
+			OrderID:      100,
+			Status:       domain.StatusInProgress,
+			Version:      4,
+			MenuItemName: "Pizza",
+			LineNumber:   1,
+			UnitSequence: 1,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		},
+		updateItemResult: true,
+		countItemsResult: domain.ItemStatusCounts{Ready: 1},
+		getOrderInTxResult: &domain.ProductionOrder{
+			OrderID:          100,
+			ExternalRequestID: "req-100",
+			TotalItemCount:    1,
+		},
+	}
+
+	h := NewHandlers(store, logging.New())
+	mux := http.NewServeMux()
+	h.Register(mux, func(next http.Handler) http.Handler { return next })
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/production/items/item-1/ready", strings.NewReader(`{}`))
+	req.Header.Set("Content-Type", "application/json")
+	req = withClaims(req, &auth.UserClaims{UserID: 1007, Login: "staff1", Roles: []string{"STAFF"}, DisplayName: "Staff One"})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if store.lastOrderStatus != domain.StatusReady {
+		t.Fatalf("expected derived order status READY, got %s", store.lastOrderStatus)
+	}
+	if store.lastOrderReadyAt == nil {
+		t.Fatal("expected readyAt timestamp to be set when order becomes READY")
+	}
+	if len(store.outboxRecords) != 2 {
+		t.Fatalf("expected 2 outbox events (item.ready + order.ready), got %d", len(store.outboxRecords))
+	}
+
+	routingKeys := []string{store.outboxRecords[0].RoutingKey, store.outboxRecords[1].RoutingKey}
+	if !(containsString(routingKeys, "item.ready") && containsString(routingKeys, "order.ready")) {
+		t.Fatalf("expected routing keys to include item.ready and order.ready, got %v", routingKeys)
+	}
+}
+
+func containsString(items []string, target string) bool {
+	for _, item := range items {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }
