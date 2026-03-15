@@ -70,6 +70,8 @@ One short paragraph describing the desired outcome.
 ## Notes for Agents
 
 - First visible chat message must identify the current role, for example `Working as planner agent.`
-- Append audit entries to `agent/tasks/<task-id>.agents-audit.md` when starting, handing off, retrying, blocking, and finishing work.
+- Stage agents append exactly two audit entries for normal execution: `received` and `completed`.
+- Add extra stage-agent audit entries only when receiving retry feedback or blocking the task.
+- Supervisor appends lifecycle audit entries for pickup, status changes, handoffs, retry routing, blocking, PR handoff, and archival.
 - Resolve `source_architecture` from `agent/done/<source_architecture>/<source_architecture>.arch.md` first, with fallback to `agent/tasks/<source_architecture>.arch.md`.
 - <handoff note or implementation hint>

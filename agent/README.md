@@ -60,7 +60,7 @@ Supervisor:
 **Alternative approaches:**
 
 - **Manual orchestration**: You invoke each agent yourself, one at a time, passing the relevant files. More control, more effort.
-- **Single-session**: One AI role-plays all agents sequentially. Simpler, but context grows large on non-trivial tasks. Only suitable for small, focused changes.
+- **Do not use single-session role-play**: this repository requires fresh context per stage, so one session must not simulate multiple agent roles.
 
 ### Key principle
 
@@ -116,12 +116,14 @@ YYYY-MM-DD HH:MM:SS - <agent-name>
 <short action description>
 ```
 
-Every agent must log exactly two entries per normal stage execution:
+The supervisor is the audit-log exception. It records lifecycle events for task pickup, status changes, handoffs, retry routing, blocking, PR handoff, and archival.
+
+Execution-stage agents (`architect`, `task-splitter`, `planner`, `coder`, `tester`, `reviewer`) must log exactly two entries per normal stage execution:
 
 1. **Received**: logged immediately when the agent receives the task, before any processing.
 2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
 
-Additional entries are required when:
+Additional execution-stage agent entries are required when:
 
 - receiving retry feedback
 - blocking the task

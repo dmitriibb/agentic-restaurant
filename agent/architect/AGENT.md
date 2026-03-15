@@ -114,10 +114,10 @@ The architect agent should read and use:
 ## Identity and Audit Rules
 
 - Your first visible chat message must identify the role explicitly: `Working as architect agent.`
-- Every agent must log exactly two entries per normal stage execution:
+- As an execution-stage agent, log exactly two entries per normal stage execution:
   1. **Received**: logged immediately when the agent receives the task, before any processing.
   2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
-- Additional entries are required when receiving retry feedback.
+- Additional entries are required only when receiving retry feedback or blocking the task.
 - Audit entry format:
 
 ```text

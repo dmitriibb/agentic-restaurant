@@ -52,7 +52,7 @@ Implement the durable production state model in `production-service`, including 
 ## Context
 
 - Related files: `apps/production-service`, `domain-brain/entities/production-order.md`, `domain-brain/entities/production-item.md`
-- Related docs: `agent/tasks/task-010-order-production-pipeline-architecture.arch.md`
+- Related docs: `agent/done/task-010-order-production-pipeline-architecture/task-010-order-production-pipeline-architecture.arch.md`
 - Source architecture: `task-010-order-production-pipeline-architecture`
 - Related flows: `order_production`
 - Risks or dependencies: idempotency and status recalculation logic are the highest-risk parts of the service.
@@ -66,6 +66,8 @@ Implement the durable production state model in `production-service`, including 
 ## Notes for Agents
 
 - First visible chat message must identify the current role, for example `Working as planner agent.`
-- Append audit entries to `agent/tasks/<task-id>.agents-audit.md` when starting, handing off, retrying, blocking, and finishing work.
+- Stage agents append exactly two audit entries for normal execution: `received` and `completed`.
+- Add extra stage-agent audit entries only when receiving retry feedback or blocking the task.
+- Supervisor appends lifecycle audit entries for pickup, status changes, handoffs, retry routing, blocking, PR handoff, and archival.
 - Resolve `source_architecture` from `agent/done/<source_architecture>/<source_architecture>.arch.md` first, with fallback to `agent/tasks/<source_architecture>.arch.md`.
 - Recompute order state from persisted item facts instead of trusting prior in-memory status.

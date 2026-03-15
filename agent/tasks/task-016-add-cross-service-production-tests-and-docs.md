@@ -61,7 +61,7 @@ Close the production-pipeline slice with automated cross-service verification an
 ## Context
 
 - Related files: `README.md`, `docker-compose.yml`, service test suites
-- Related docs: `agent/tasks/task-010-order-production-pipeline-architecture.arch.md`
+- Related docs: `agent/done/task-010-order-production-pipeline-architecture/task-010-order-production-pipeline-architecture.arch.md`
 - Source architecture: `task-010-order-production-pipeline-architecture`
 - Related flows: `order_submission`, `order_production`
 - Risks or dependencies: integration coverage must reflect the real RabbitMQ handoff rather than only mocked flows where possible.
@@ -74,6 +74,8 @@ Close the production-pipeline slice with automated cross-service verification an
 ## Notes for Agents
 
 - First visible chat message must identify the current role, for example `Working as planner agent.`
-- Append audit entries to `agent/tasks/<task-id>.agents-audit.md` when starting, handing off, retrying, blocking, and finishing work.
+- Stage agents append exactly two audit entries for normal execution: `received` and `completed`.
+- Add extra stage-agent audit entries only when receiving retry feedback or blocking the task.
+- Supervisor appends lifecycle audit entries for pickup, status changes, handoffs, retry routing, blocking, PR handoff, and archival.
 - Resolve `source_architecture` from `agent/done/<source_architecture>/<source_architecture>.arch.md` first, with fallback to `agent/tasks/<source_architecture>.arch.md`.
 - Prefer validating the real async handoff path instead of only unit-testing isolated pieces.

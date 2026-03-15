@@ -54,7 +54,7 @@ Create the dedicated staff web app for loading the production board, showing liv
 ## Context
 
 - Related files: `apps/orders-client` for frontend conventions, `apps/users-service`, `apps/production-service`
-- Related docs: `agent/tasks/task-010-order-production-pipeline-architecture.arch.md`
+- Related docs: `agent/done/task-010-order-production-pipeline-architecture/task-010-order-production-pipeline-architecture.arch.md`
 - Source architecture: `task-010-order-production-pipeline-architecture`
 - Related flows: `user_authentication`, `order_production`
 - Risks or dependencies: the UI depends on stable production-service query and command contracts.
@@ -68,6 +68,8 @@ Create the dedicated staff web app for loading the production board, showing liv
 ## Notes for Agents
 
 - First visible chat message must identify the current role, for example `Working as planner agent.`
-- Append audit entries to `agent/tasks/<task-id>.agents-audit.md` when starting, handing off, retrying, blocking, and finishing work.
+- Stage agents append exactly two audit entries for normal execution: `received` and `completed`.
+- Add extra stage-agent audit entries only when receiving retry feedback or blocking the task.
+- Supervisor appends lifecycle audit entries for pickup, status changes, handoffs, retry routing, blocking, PR handoff, and archival.
 - Resolve `source_architecture` from `agent/done/<source_architecture>/<source_architecture>.arch.md` first, with fallback to `agent/tasks/<source_architecture>.arch.md`.
 - Keep the UI terminology aligned with the status and action names from the architecture document.

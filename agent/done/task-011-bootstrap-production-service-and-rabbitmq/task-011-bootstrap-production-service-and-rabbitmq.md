@@ -50,7 +50,7 @@ Create the new Go `production-service` skeleton plus the local RabbitMQ and data
 ## Context
 
 - Related files: `docker-compose.yml`, `flow-index.yaml`
-- Related docs: `agent/tasks/task-010-order-production-pipeline-architecture.arch.md`
+- Related docs: `agent/done/task-010-order-production-pipeline-architecture/task-010-order-production-pipeline-architecture.arch.md`
 - Source architecture: `task-010-order-production-pipeline-architecture`
 - Related flows: `order_production`
 - Risks or dependencies: service bootstrap choices should not block later consumer and API work.

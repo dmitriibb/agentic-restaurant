@@ -6,4 +6,4 @@ This folder is the stable human-facing index for those designs.
 
 ## Current Designs
 
-- [Order Production Pipeline](../../agent/tasks/task-010-order-production-pipeline-architecture.arch.md)
+- [Order Production Pipeline](../../agent/done/task-010-order-production-pipeline-architecture/task-010-order-production-pipeline-architecture.arch.md)

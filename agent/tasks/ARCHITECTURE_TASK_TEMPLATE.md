@@ -66,6 +66,8 @@ One short paragraph describing the design problem and why architecture is needed
 ## Notes for Agents
 
 - First visible chat message must identify the current role.
-- Append audit entries to `agent/tasks/<task-id>.agents-audit.md` when starting, handing off, retrying, blocking, and finishing work.
+- Stage agents append exactly two audit entries for normal execution: `received` and `completed`.
+- Add extra stage-agent audit entries only when receiving retry feedback or blocking the task.
+- Supervisor appends lifecycle audit entries for pickup, status changes, handoffs, retry routing, blocking, PR handoff, and archival.
 - The architect owns `arch.md`.
 - The task-splitter owns `split.md` and generated implementation task files.

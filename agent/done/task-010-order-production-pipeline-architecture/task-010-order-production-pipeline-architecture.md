@@ -23,8 +23,8 @@ flows:
   - order_production
 dependencies: []
 validation:
-  - Architecture document exists at agent/tasks/task-010-order-production-pipeline-architecture.arch.md
-  - Split report exists at agent/tasks/task-010-order-production-pipeline-architecture.split.md
+  - Architecture document exists at agent/done/task-010-order-production-pipeline-architecture/task-010-order-production-pipeline-architecture.arch.md
+  - Split report exists at agent/done/task-010-order-production-pipeline-architecture/task-010-order-production-pipeline-architecture.split.md
   - Generated implementation tasks use standalone numeric ids such as task-011-<slug>
 ```
 

@@ -103,12 +103,23 @@ execution_rules:
 
 audit_log:
   file: agent/tasks/<task-id>.agents-audit.md
-  required_entries_per_agent:
-    - received: logged immediately when the agent receives the task, before any processing
-    - completed: logged when the agent finishes work, describing what was done and who the task is passed to
-  additional_entries_when:
-    - retry_received
-    - blocked
+  archived_with_task: agent/done/<task-id>/<task-id>.agents-audit.md
+  stage_agents:
+    normal_execution_entries:
+      - received: logged immediately when the agent receives the task, before any processing
+      - completed: logged when the agent finishes work, describing what was done and who the task is passed to
+    additional_entries_when:
+      - retry_received
+      - blocked
+  supervisor:
+    entries_when:
+      - task_received
+      - status_transition
+      - stage_handoff
+      - retry_routed
+      - blocked
+      - pr_handoff
+      - archived
   entry_format: "YYYY-MM-DD HH:MM:SS - <agent-name>\n<short action description>"
 
 task_statuses:

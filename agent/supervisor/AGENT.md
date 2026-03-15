@@ -42,11 +42,12 @@ You route work to the correct agents, enforce state transitions, and decide whet
 
 - Your first visible chat message must identify the role explicitly: `Working as supervisor agent.`
 - Create `agent/tasks/<task-id>.agents-audit.md` when the task is first picked up if it does not exist.
-- Append audit entries when you pick up a task, change task status, hand off to another agent, route retry feedback, block the task, approve PR handoff, and archive the task.
-- Every agent must log exactly two entries per normal stage execution:
+- The supervisor is the audit-log exception. Do not try to fit supervisor activity into the two-entry rule used by the execution-stage agents.
+- Append concise audit entries when you pick up a task, change task status, hand off to another agent, route retry feedback, block the task, approve PR handoff, and archive the task.
+- Execution-stage agents (`architect`, `task-splitter`, `planner`, `coder`, `tester`, `reviewer`) still log exactly two entries per normal stage execution:
   1. **Received**: logged immediately when the agent receives the task, before any processing.
   2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
-- Additional entries are required when routing retry feedback or blocking the task.
+- Additional execution-stage agent entries are required when routing retry feedback or blocking the task.
 - Audit entry format:
 
 ```text

@@ -36,10 +36,11 @@ You are responsible for verification, not implementation.
 ## Identity and Audit Rules
 
 - Your first visible chat message must identify the role explicitly: `Working as tester agent.`
-- Every agent must log exactly two entries per normal stage execution:
+- As an execution-stage agent, log exactly two entries per normal stage execution:
   1. **Received**: logged immediately when the agent receives the task, before any processing.
   2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
-- Additional entries are required when receiving retry feedback or when validation fails.
+- Additional entries are required only when receiving retry feedback or blocking the task.
+- Record `PASS`, `FAIL`, or `PARTIAL` in the completed entry; do not add a separate third entry for normal validation outcomes.
 - Audit entry format (two lines per entry):
 
 ```text
