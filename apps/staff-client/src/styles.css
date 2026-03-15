@@ -1,0 +1,362 @@
+:root {
+  --bg: radial-gradient(circle at 0% 0%, #f4f2df 0%, #efe8c8 45%, #e8ddaf 100%);
+  --surface: #ffffffdb;
+  --line: #d9ca97;
+  --text: #1f2327;
+  --muted: #5d6254;
+  --accent: #115749;
+  --accent-strong: #0f4a3f;
+  --shadow: 0 18px 32px -24px rgba(47, 43, 26, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 2.5rem;
+  display: grid;
+  gap: 1.2rem;
+}
+
+.hero {
+  border: 1px solid var(--line);
+  background: linear-gradient(155deg, #fff6d5 0%, #f5edcf 100%);
+  box-shadow: var(--shadow);
+  border-radius: 22px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: #6a674d;
+}
+
+h1 {
+  margin: 0.35rem 0 0.15rem;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+}
+
+h2 {
+  margin: 0 0 0.8rem;
+}
+
+h3 {
+  margin: 0 0 0.5rem;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.auth-info {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* ── Auth section ── */
+
+.auth-section {
+  max-width: 400px;
+}
+
+.auth-form {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  border: 1px solid #cabd8c;
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+}
+
+/* ── Shared components ── */
+
+.surface-card {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+}
+
+.action {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 0.42rem 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.action.ghost {
+  background: #fffdf6;
+  color: var(--accent);
+  border: 1px solid var(--line);
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.error-text {
+  margin: 0;
+  color: #8d1f1f;
+  font-weight: 600;
+}
+
+/* ── Board layout ── */
+
+.board-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.order-list-panel {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.6rem;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+.detail-panel {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+}
+
+/* ── Status sections ── */
+
+.status-section {
+  display: grid;
+  gap: 0.4rem;
+}
+
+/* ── Order cards ── */
+
+.order-card {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid #e4d9b1;
+  border-radius: 12px;
+  background: #fffdf7;
+  padding: 0.65rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  width: 100%;
+}
+
+.order-card:hover {
+  border-color: var(--accent);
+}
+
+.order-card.selected {
+  border-color: var(--accent);
+  background: #ecf8f2;
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Status badge ── */
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-badge.queued {
+  background: #e8e5db;
+  color: #555;
+}
+
+.status-badge.in-progress {
+  background: #dbe9f8;
+  color: #1a5fa0;
+}
+
+.status-badge.blocked {
+  background: #fce4cc;
+  color: #a04a1a;
+}
+
+.status-badge.ready {
+  background: #d4f0df;
+  color: #1a7a3a;
+}
+
+/* ── Detail view ── */
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.detail-header h2 {
+  margin: 0;
+}
+
+.item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.item-row {
+  border: 1px solid #e4d9b1;
+  border-radius: 12px;
+  background: #fffdf7;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.item-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.blocked-reason {
+  color: #a04a1a;
+  font-weight: 600;
+}
+
+/* ── Footer ── */
+
+.service-grid {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+
+.service-grid div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.service-grid span {
+  font-size: 0.9rem;
+  color: #45483f;
+  word-break: break-all;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 900px) {
+  .board-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .order-list-panel {
+    max-height: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .app-shell {
+    padding-inline: 0.9rem;
+  }
+
+  .hero {
+    border-radius: 16px;
+    padding: 1.05rem;
+  }
+
+  .service-grid {
+    grid-template-columns: 1fr;
+  }
+}

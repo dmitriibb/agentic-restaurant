@@ -247,6 +247,24 @@ services:
         limits:
           memory: 64M
 
+  staff-client:
+    build:
+      context: ./apps/staff-client
+    container_name: restaurant-staff-client
+    ports:
+      - "8085:80"
+    environment:
+      VITE_APP_NAME: staff-client
+    depends_on:
+      users-service:
+        condition: service_healthy
+      production-service:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
 volumes:
   mongo-data:
   mysql-data:

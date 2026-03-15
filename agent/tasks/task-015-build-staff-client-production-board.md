@@ -4,7 +4,7 @@
 id: task-015-build-staff-client-production-board
 title: Build staff-client production board
 pipeline: implementation
-status: queued
+status: pr_created
 priority: high
 type: feature
 architecture: not_requested
