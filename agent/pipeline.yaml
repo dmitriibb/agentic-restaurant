@@ -100,6 +100,20 @@ execution_rules:
   direct_non_supervisor_execution_invalid: true
   single_context_multi_role_execution_invalid: true
   retroactive_artifact_synthesis_invalid: true
+  fabricated_timestamps_invalid: true
+
+required_skills:
+  get-local-time:
+    path: skills/get-local-time/SKILL.md
+    when: before writing any timestamp in audit logs, task metadata, or dated output
+    enforcement: every agent must run a terminal command to get real system time; fabricated timestamps invalidate the execution
+  run-pipeline-stage:
+    path: skills/run-pipeline-stage/SKILL.md
+    when: supervisor hands off to any execution-stage agent
+    enforcement: supervisor must use runSubagent for each stage; role-playing in supervisor context invalidates the execution
+  maintain-domain-brain:
+    path: skills/maintain-domain-brain/SKILL.md
+    when: any code change touching business logic, domain entities, flows, or state transitions
 
 audit_log:
   file: agent/tasks/<task-id>.agents-audit.md
@@ -121,6 +135,7 @@ audit_log:
       - pr_handoff
       - archived
   entry_format: "YYYY-MM-DD HH:MM:SS - <agent-name>\n<short action description>"
+  timestamp_source: "MUST come from host system clock via get-local-time skill. Fabricated timestamps invalidate the audit log."
 
 task_statuses:
   - queued

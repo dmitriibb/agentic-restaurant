@@ -39,6 +39,18 @@ If any required field is missing, stop and restart with a valid first message.
 6. Preserve repository conventions and existing project structure.
 7. In multi-agent execution, keep a per-task audit log at `agent/tasks/<task-id>.agents-audit.md` during execution and archive it with the task on completion.
 8. The first chat message from each fresh agent must explicitly identify the role, for example: `Working as planner agent.`
+9. All timestamps in audit logs and task metadata MUST come from the host machine's system clock. Use the `get-local-time` skill (`skills/get-local-time/SKILL.md`). NEVER fabricate, estimate, or hardcode timestamps. Each entry requires a fresh time fetch.
+10. In multi-agent execution, each pipeline stage MUST be executed via `runSubagent` to create a fresh execution context. The supervisor MUST NOT role-play other agents within its own context. Use the `run-pipeline-stage` skill (`skills/run-pipeline-stage/SKILL.md`) for the exact procedure. Simulating multiple roles in a single agent context is an invalid execution.
+
+## Required Skills
+
+All agents must load and apply these skills when applicable:
+
+| Skill | Path | When to use |
+|-------|------|-------------|
+| get-local-time | `skills/get-local-time/SKILL.md` | Before writing ANY timestamp (audit logs, task metadata, any dated output) |
+| run-pipeline-stage | `skills/run-pipeline-stage/SKILL.md` | Supervisor: before handing off to any execution-stage agent |
+| maintain-domain-brain | `skills/maintain-domain-brain/SKILL.md` | Any code change touching business logic, domain entities, flows, or state transitions |
 
 
 ## Agents rules
@@ -194,10 +206,12 @@ If any required implementation stage was skipped entirely, the task is not compl
 
 See `agent/supervisor/AGENT.md` for the full routing table and `agent/pipeline.yaml` for the machine-readable definition.
 
-## Routing Validation (Recommended)
+## Routing Validation (Mandatory)
 
-Add a lightweight startup validator that fails the run when:
+The following conditions invalidate an execution run. If any are detected, the agent must stop and restart correctly:
 
 1. Prompt matches a multi-agent trigger prefix but first assistant line is not `Working as supervisor agent.`
 2. First assistant message does not include detected mode, selected pipeline, and task id (when provided).
 3. `agent/tasks/<task-id>.agents-audit.md` is not created immediately for multi-agent execution.
+4. Any audit log timestamp was not fetched from the host system clock via the `get-local-time` skill.
+5. Any pipeline stage was executed by the supervisor role-playing instead of invoking `runSubagent` per the `run-pipeline-stage` skill.

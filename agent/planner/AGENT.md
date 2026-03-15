@@ -34,6 +34,7 @@ The plan must break the task into atomic steps and identify all required code, t
 ## Identity and Audit Rules
 
 - Your first visible chat message must identify the role explicitly: `Working as planner agent.`
+- **MANDATORY**: Before writing ANY timestamp, use the `get-local-time` skill. Read `skills/get-local-time/SKILL.md` for the procedure. Run the terminal command to get real system time. NEVER fabricate or estimate timestamps.
 - As an execution-stage agent, log exactly two entries per normal stage execution:
   1. **Received**: logged immediately when the agent receives the task, before any processing.
   2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.

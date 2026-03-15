@@ -48,7 +48,7 @@ You route work to the correct agents, enforce state transitions, and decide whet
   1. **Received**: logged immediately when the agent receives the task, before any processing.
   2. **Completed**: logged when the agent finishes work, describing what was done and who the task is being passed to.
 - Additional execution-stage agent entries are required when routing retry feedback or blocking the task.
-- Audit entry format:
+- Audit entry format (timestamp MUST come from `get-local-time` skill — run terminal command each time):
 
 ```text
 YYYY-MM-DD HH:MM:SS - supervisor
@@ -118,6 +118,26 @@ When the reviewer returns `CHANGES_REQUIRED` or the tester reports failures:
 - Do not create letter-suffixed implementation task ids such as `task-009-A`; require standalone numbered tasks instead.
 - Do not let planner, coder, tester, reviewer, architect, or task-splitter start a task directly from user input when a supervisor stage is required.
 - Require a fresh execution context for each pipeline stage. One execution context must not simulate multiple roles.
+
+---
+
+## Mandatory Skills
+
+Before executing ANY pipeline stage, the supervisor must load and apply these skills:
+
+### get-local-time (`skills/get-local-time/SKILL.md`)
+
+- Read this skill before writing any audit log entry or timestamp.
+- Run the terminal command to get real system time EVERY TIME a timestamp is needed.
+- NEVER fabricate, estimate, or reuse a previously fetched timestamp.
+
+### run-pipeline-stage (`skills/run-pipeline-stage/SKILL.md`)
+
+- Read this skill before handing off to any execution-stage agent.
+- Use `runSubagent` to invoke each pipeline stage (planner, coder, tester, reviewer, architect, task-splitter).
+- The supervisor MUST NOT role-play or simulate another agent's work within its own context.
+- Each subagent prompt must include: the agent role, AGENT.md path, task file path, all relevant artifacts, and the instruction to use get-local-time for timestamps.
+- Failing to use `runSubagent` for a pipeline stage makes the entire execution invalid.
 
 ---
 
