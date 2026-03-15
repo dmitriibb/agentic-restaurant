@@ -13,7 +13,9 @@ Repository-level rules for all AI agents (single or multi-agent mode).
 7. This repository is a generic foundation. `domain-brain/` and `flow-index.yaml` may remain template-like until the first concrete project flow is introduced. When adapting this repo to a real product, seed project-specific domain knowledge before implementing business logic.
 8. In multi-agent execution, keep a per-task audit log at `agent/tasks/<task-id>.agents-audit.md` and append entries whenever an agent starts work, hands off work, retries work, blocks work, or completes its stage.
 9. The first chat message from each fresh agent must explicitly identify the role, for example: `Working as planner agent.`
-10. Supervisor must run `agent/supervisor/validate-task-pipeline.ps1 -TaskId <task-id>` before handoff/archive, and use `-Archive` only after status is `done`.
+10. Implementation and architecture tasks in `agent/tasks/` must start with the supervisor stage. Direct execution by planner, coder, tester, reviewer, architect, or task-splitter without supervisor routing is invalid pipeline execution.
+11. Each pipeline stage must be executed by a fresh agent context for that role. One agent must not simulate multiple stages in a single execution context.
+12. Missing stage artifacts or audit entries must not be backfilled after implementation to make a task appear compliant. If a stage was skipped, the supervisor must route the task through the missing stage(s) before completion, or mark the task `blocked`.
 
 ## Multi-Agent Pipeline
 
@@ -127,6 +129,8 @@ Additional entries are required when:
 - receiving retry feedback
 - blocking the task
 
+Audit logs are execution evidence, not paperwork. They must be produced by the agent while doing that stage, not synthesized afterward.
+
 Example:
 
 ```text
@@ -153,5 +157,7 @@ When the tester reports failures or the reviewer returns `CHANGES_REQUIRED`:
 4. Maximum 2 retry cycles per task. After 2 retries, status becomes `blocked` and requires human intervention.
 
 If an implementation task exposes a missing or incorrect architecture decision, do not inject `agent/architect` back into the implementation pipeline. The supervisor should stop or block the implementation task and open or route a separate `pipeline: architecture` task.
+
+If any required implementation stage was skipped entirely, the task is not complete even if code was written. The supervisor must resume from the earliest missing stage and continue forward, or mark the task `blocked`. Retroactive artifact creation does not satisfy this requirement.
 
 See `agent/supervisor/AGENT.md` for the full routing table and `agent/pipeline.yaml` for the machine-readable definition.

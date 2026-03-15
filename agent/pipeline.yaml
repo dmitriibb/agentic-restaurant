@@ -3,6 +3,10 @@ version: 2
 pipelines:
   implementation:
     description: Execute implementation-ready tasks through planning, coding, testing, and review.
+    enforcement:
+      supervisor_entry_required: true
+      fresh_agent_context_per_stage: true
+      retroactive_artifact_backfill_invalid: true
     task_selection:
       default: true
       when:
@@ -39,6 +43,10 @@ pipelines:
 
   architecture:
     description: Produce architecture and decompose it into implementation-ready tasks.
+    enforcement:
+      supervisor_entry_required: true
+      fresh_agent_context_per_stage: true
+      retroactive_artifact_backfill_invalid: true
     task_selection:
       when:
         - task metadata sets pipeline to architecture
@@ -87,6 +95,11 @@ pipeline_selection:
 agent_identity:
   first_chat_message_must_identify_role: true
   example: Working as planner agent.
+
+execution_rules:
+  direct_non_supervisor_execution_invalid: true
+  single_context_multi_role_execution_invalid: true
+  retroactive_artifact_synthesis_invalid: true
 
 audit_log:
   file: agent/tasks/<task-id>.agents-audit.md

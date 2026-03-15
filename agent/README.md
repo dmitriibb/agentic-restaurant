@@ -20,6 +20,8 @@ Your main AI conversation acts as the supervisor. For each pipeline stage, the s
 
 The sub-agent does its work, writes its output artifact to disk, and exits. The supervisor then inspects the output and decides whether to proceed, retry, or stop.
 
+This is the required execution model for this repository. A single agent must not role-play multiple stages and then synthesize missing artifacts afterward.
+
 **Why this works:** Each sub-agent starts with a clean context. It reads its inputs from files, produces its output as a file. No single agent carries the entire pipeline history, so context never explodes.
 
 Each fresh sub-agent must also identify itself in its first chat message with explicit role wording such as `Working as coder agent.`
@@ -66,23 +68,7 @@ The files in `agent/tasks/` are the message bus. Artifacts are the inter-agent p
 
 The audit file is part of that protocol. It is the human-visible execution history for the task.
 
-## Supervisor Validation Gate
-
-Before archiving any task, run:
-
-```powershell
-powershell -File agent/supervisor/validate-task-pipeline.ps1 -TaskId <task-id>
-```
-
-This validates required artifacts and audit entries for the task pipeline.
-
-To archive only after validation passes:
-
-```powershell
-powershell -File agent/supervisor/validate-task-pipeline.ps1 -TaskId <task-id> -Archive
-```
-
-This hard gate prevents skipping planner/tester/reviewer stages in implementation tasks and prevents partial multi-agent execution from being archived as complete.
+The audit file is execution evidence, not paperwork. If a required stage was skipped, the supervisor must resume from the earliest missing stage and continue forward, or block the task. Retroactive artifact creation is not a valid substitute for stage execution.
 
 ---
 

@@ -33,7 +33,8 @@ You route work to the correct agents, enforce state transitions, and decide whet
 8. Enforce retry limits and stop the pipeline when limits are exceeded.
 9. Prepare successful implementation tasks for branch/PR handoff.
 10. Archive completed task artifacts into `agent/done/<task-id>/`.
-11. Run `agent/supervisor/validate-task-pipeline.ps1 -TaskId <task-id>` before PR handoff and `-Archive` only after status is `done`.
+11. Refuse to treat retroactively synthesized artifacts or audit entries as valid stage execution.
+12. If any required stage was skipped, route the task from the earliest missing stage forward, or mark the task `blocked`.
 
 ---
 
@@ -114,6 +115,8 @@ When the reviewer returns `CHANGES_REQUIRED` or the tester reports failures:
 - Use `pipeline: implementation` for all executable work items, including tasks that reference a previously approved architecture via `source_architecture`.
 - Do not send work to `agent/architect` from inside the implementation pipeline.
 - Do not create letter-suffixed implementation task ids such as `task-009-A`; require standalone numbered tasks instead.
+- Do not let planner, coder, tester, reviewer, architect, or task-splitter start a task directly from user input when a supervisor stage is required.
+- Require a fresh execution context for each pipeline stage. One execution context must not simulate multiple roles.
 
 ---
 
@@ -150,9 +153,8 @@ Implementation pipeline:
 5. tester -> status: `testing`
 6. reviewer -> status: `reviewing`
 7. PR handoff -> status: `pr_created`
-8. run `validate-task-pipeline.ps1 -TaskId <task-id>`
-9. set task status: `done`
-10. run `validate-task-pipeline.ps1 -TaskId <task-id> -Archive`
+8. set task status: `done`
+9. archive task into `agent/done/<task-id>/`
 
 Architecture pipeline:
 
