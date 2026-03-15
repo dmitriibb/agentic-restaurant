@@ -314,10 +314,10 @@ func (h *Handlers) commandHandler(command string) http.HandlerFunc {
 		})
 
 		writeJSON(w, http.StatusOK, map[string]any{
-			"itemId":    item.ID,
-			"orderId":   item.OrderID,
-			"status":    newStatus,
-			"command":   command,
+			"itemId":     item.ID,
+			"orderId":    item.OrderID,
+			"status":     newStatus,
+			"command":    command,
 			"executedBy": claims.DisplayName,
 		})
 	}

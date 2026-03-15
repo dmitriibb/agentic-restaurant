@@ -9,24 +9,24 @@ import (
 )
 
 type Config struct {
-	Port            int
-	MySQLHost       string
-	MySQLPort       int
-	MySQLDatabase   string
-	MySQLUsername   string
-	MySQLPassword   string
-	MySQLTimeout    time.Duration
-	RabbitHost      string
-	RabbitPort      int
-	RabbitAPIHost   string
-	RabbitAPIPort   int
-	RabbitUsername  string
-	RabbitPassword  string
-	RabbitVHost     string
-	RabbitExchange  string
-	RabbitQueue     string
-	RabbitDLQ       string
-	RabbitRouteKey  string
+	Port              int
+	MySQLHost         string
+	MySQLPort         int
+	MySQLDatabase     string
+	MySQLUsername     string
+	MySQLPassword     string
+	MySQLTimeout      time.Duration
+	RabbitHost        string
+	RabbitPort        int
+	RabbitAPIHost     string
+	RabbitAPIPort     int
+	RabbitUsername    string
+	RabbitPassword    string
+	RabbitVHost       string
+	RabbitExchange    string
+	RabbitQueue       string
+	RabbitDLQ         string
+	RabbitRouteKey    string
 	StartupTimeout    time.Duration
 	ReadinessTimout   time.Duration
 	UsersServiceURL   string
@@ -35,24 +35,24 @@ type Config struct {
 
 func Load() (Config, error) {
 	cfg := Config{
-		Port:            intFromEnv("SERVER_PORT", 8084),
-		MySQLHost:       strFromEnv("PRODUCTION_DB_HOST", "mysql"),
-		MySQLPort:       intFromEnv("PRODUCTION_DB_PORT", 3306),
-		MySQLDatabase:   strFromEnv("PRODUCTION_DB_NAME", "production_db"),
-		MySQLUsername:   strFromEnv("PRODUCTION_DB_USERNAME", "production"),
-		MySQLPassword:   strFromEnv("PRODUCTION_DB_PASSWORD", "production"),
-		MySQLTimeout:    durationFromEnv("PRODUCTION_DB_TIMEOUT", 2*time.Second),
-		RabbitHost:      strFromEnv("RABBITMQ_HOST", "restaurant-rabbitmq"),
-		RabbitPort:      intFromEnv("RABBITMQ_PORT", 5672),
-		RabbitAPIHost:   strFromEnv("RABBITMQ_API_HOST", "restaurant-rabbitmq"),
-		RabbitAPIPort:   intFromEnv("RABBITMQ_API_PORT", 15672),
-		RabbitUsername:  strFromEnv("RABBITMQ_USERNAME", "guest"),
-		RabbitPassword:  strFromEnv("RABBITMQ_PASSWORD", "guest"),
-		RabbitVHost:     strFromEnv("RABBITMQ_VHOST", "/"),
-		RabbitExchange:  strFromEnv("PRODUCTION_EXCHANGE", "restaurant.production.v1"),
-		RabbitQueue:     strFromEnv("PRODUCTION_ITEM_REQUESTED_QUEUE", "production-service.item-requested.v1"),
-		RabbitDLQ:       strFromEnv("PRODUCTION_ITEM_REQUESTED_DLQ", "production-service.item-requested.dlq"),
-		RabbitRouteKey:  strFromEnv("PRODUCTION_ITEM_REQUESTED_ROUTING_KEY", "item.requested"),
+		Port:              intFromEnv("SERVER_PORT", 8084),
+		MySQLHost:         strFromEnv("PRODUCTION_DB_HOST", "mysql"),
+		MySQLPort:         intFromEnv("PRODUCTION_DB_PORT", 3306),
+		MySQLDatabase:     strFromEnv("PRODUCTION_DB_NAME", "production_db"),
+		MySQLUsername:     strFromEnv("PRODUCTION_DB_USERNAME", "production"),
+		MySQLPassword:     strFromEnv("PRODUCTION_DB_PASSWORD", "production"),
+		MySQLTimeout:      durationFromEnv("PRODUCTION_DB_TIMEOUT", 2*time.Second),
+		RabbitHost:        strFromEnv("RABBITMQ_HOST", "restaurant-rabbitmq"),
+		RabbitPort:        intFromEnv("RABBITMQ_PORT", 5672),
+		RabbitAPIHost:     strFromEnv("RABBITMQ_API_HOST", "restaurant-rabbitmq"),
+		RabbitAPIPort:     intFromEnv("RABBITMQ_API_PORT", 15672),
+		RabbitUsername:    strFromEnv("RABBITMQ_USERNAME", "guest"),
+		RabbitPassword:    strFromEnv("RABBITMQ_PASSWORD", "guest"),
+		RabbitVHost:       strFromEnv("RABBITMQ_VHOST", "/"),
+		RabbitExchange:    strFromEnv("PRODUCTION_EXCHANGE", "restaurant.production.v1"),
+		RabbitQueue:       strFromEnv("PRODUCTION_ITEM_REQUESTED_QUEUE", "production-service.item-requested.v1"),
+		RabbitDLQ:         strFromEnv("PRODUCTION_ITEM_REQUESTED_DLQ", "production-service.item-requested.dlq"),
+		RabbitRouteKey:    strFromEnv("PRODUCTION_ITEM_REQUESTED_ROUTING_KEY", "item.requested"),
 		StartupTimeout:    durationFromEnv("STARTUP_TIMEOUT", 10*time.Second),
 		ReadinessTimout:   durationFromEnv("READINESS_TIMEOUT", 2*time.Second),
 		UsersServiceURL:   strFromEnv("USERS_SERVICE_URL", "http://users-service:8081"),

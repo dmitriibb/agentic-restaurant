@@ -20,17 +20,17 @@ type mockStore struct {
 	orders []domain.ProductionOrder
 	items  []domain.ProductionItem
 
-	beginTxErr          error
-	getItemResult       *domain.ProductionItem
-	getItemErr          error
-	updateItemResult    bool
-	updateItemErr       error
-	countItemsResult    domain.ItemStatusCounts
-	countItemsErr       error
-	updateOrderErr      error
-	insertOutboxErr     error
-	getOrderInTxResult  *domain.ProductionOrder
-	getOrderInTxErr     error
+	beginTxErr         error
+	getItemResult      *domain.ProductionItem
+	getItemErr         error
+	updateItemResult   bool
+	updateItemErr      error
+	countItemsResult   domain.ItemStatusCounts
+	countItemsErr      error
+	updateOrderErr     error
+	insertOutboxErr    error
+	getOrderInTxResult *domain.ProductionOrder
+	getOrderInTxErr    error
 }
 
 type mockTx struct{}
@@ -213,10 +213,10 @@ func TestGetOrderNotFound(t *testing.T) {
 func TestPickupSuccess(t *testing.T) {
 	store := &mockStore{
 		getItemResult: &domain.ProductionItem{
-			ID:       "item-1",
-			OrderID:  100,
-			Status:   domain.StatusQueued,
-			Version:  1,
+			ID:           "item-1",
+			OrderID:      100,
+			Status:       domain.StatusQueued,
+			Version:      1,
 			MenuItemName: "Pizza",
 			LineNumber:   1,
 			UnitSequence: 1,
@@ -252,10 +252,10 @@ func TestPickupSuccess(t *testing.T) {
 func TestPickupInvalidTransition(t *testing.T) {
 	store := &mockStore{
 		getItemResult: &domain.ProductionItem{
-			ID:      "item-1",
-			OrderID: 100,
-			Status:  domain.StatusReady, // already ready, cannot pickup
-			Version: 3,
+			ID:        "item-1",
+			OrderID:   100,
+			Status:    domain.StatusReady, // already ready, cannot pickup
+			Version:   3,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -320,10 +320,10 @@ func TestCommandNoAuth(t *testing.T) {
 func TestVersionConflict(t *testing.T) {
 	store := &mockStore{
 		getItemResult: &domain.ProductionItem{
-			ID:      "item-1",
-			OrderID: 100,
-			Status:  domain.StatusQueued,
-			Version: 2,
+			ID:        "item-1",
+			OrderID:   100,
+			Status:    domain.StatusQueued,
+			Version:   2,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -348,10 +348,10 @@ func TestVersionConflict(t *testing.T) {
 func TestBlockWithReason(t *testing.T) {
 	store := &mockStore{
 		getItemResult: &domain.ProductionItem{
-			ID:       "item-1",
-			OrderID:  100,
-			Status:   domain.StatusInProgress,
-			Version:  2,
+			ID:           "item-1",
+			OrderID:      100,
+			Status:       domain.StatusInProgress,
+			Version:      2,
 			MenuItemName: "Burger",
 			LineNumber:   1,
 			UnitSequence: 1,
