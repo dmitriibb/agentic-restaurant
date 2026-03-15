@@ -10,17 +10,6 @@ This project now has a concrete product direction (restaurant operations) while 
 2. Evolve a practical multi-agent delivery pipeline (planning, coding, testing, review, handoff).
 3. Use the product as a safe environment to compare stacks, patterns, and service boundaries.
 
-## Current State
-
-The repository currently contains 4 basic application services:
-
-| Service | Stack | Responsibility | Port |
-| --- | --- | --- | --- |
-| `users-service` | Kotlin + Spring Boot + MySQL | Login, JWT issuance, internal token validation | `8081` |
-| `menu-service` | Java + Spring Boot + MongoDB | Menu read API and internal menu item resolution | `8082` |
-| `orders-service` | Kotlin + Spring Boot + MySQL | Order submission, idempotency, order persistence | `8083` |
-| `orders-client` | React + Vite + Nginx | UI for sign-in, menu browsing, basket, and order submit | `80` |
-
 ## Implemented Flows
 
 Current flows are captured in `flow-index.yaml` and documented in `domain-brain/`:

@@ -10,22 +10,26 @@ Repository-level rules for all AI agents (single or multi-agent mode).
 4. Include or update tests for behavior changes.
 5. Keep changes scoped to the task; avoid unrelated refactors.
 6. Preserve repository conventions and existing project structure.
-7. This repository is a generic foundation. `domain-brain/` and `flow-index.yaml` may remain template-like until the first concrete project flow is introduced. When adapting this repo to a real product, seed project-specific domain knowledge before implementing business logic.
-8. In multi-agent execution, keep a per-task audit log at `agent/tasks/<task-id>.agents-audit.md` and append entries whenever an agent starts work, hands off work, retries work, blocks work, or completes its stage.
-9. The first chat message from each fresh agent must explicitly identify the role, for example: `Working as planner agent.`
-10. Implementation and architecture tasks in `agent/tasks/` must start with the supervisor stage. Direct execution by planner, coder, tester, reviewer, architect, or task-splitter without supervisor routing is invalid pipeline execution.
-11. Each pipeline stage must be executed by a fresh agent context for that role. One agent must not simulate multiple stages in a single execution context.
-12. Missing stage artifacts or audit entries must not be backfilled after implementation to make a task appear compliant. If a stage was skipped, the supervisor must route the task through the missing stage(s) before completion, or mark the task `blocked`.
+7. In multi-agent execution, keep a per-task audit log at `agent/tasks/<task-id>.agents-audit.md` and append entries whenever an agent starts work, hands off work, retries work, blocks work, or completes its stage.
+8. The first chat message from each fresh agent must explicitly identify the role, for example: `Working as planner agent.`
 
-## Multi-Agent Pipeline
 
-Implementation pipeline:
+## Agents rules
 
-`tasks -> supervisor -> planner -> coder -> tester -> reviewer -> PR handoff -> done`
+### Default agent
 
-Architecture pipeline:
+If Agents flow is not metioned explicitly - work as a default all-purpose agent
 
-`tasks -> supervisor -> architect -> task-splitter -> done`
+### Multi-Agent Implementation
+
+- When to use: if prompt / input start with "multi-agent implementation" or something similar
+- Implementation pipeline: `tasks -> supervisor -> planner -> coder -> tester -> reviewer -> PR handoff -> done`
+
+
+### Multi-Agent Artchitecture
+
+- When to use: if prompt / input start with "multi-agent architecture" or something similar
+- Implementation pipeline:`tasks -> architect -> task-splitter -> done`
 
 Pipeline routing rules:
 
@@ -33,16 +37,7 @@ Pipeline routing rules:
 - Run the architecture pipeline only when the user explicitly requests architecture or design work in the task or prompt.
 - Do not invoke `agent/architect` automatically based on agent judgment alone.
 - The architecture pipeline must end by creating implementation-ready task files with standalone numeric task ids such as `task-011-migrate-db`, not letter-suffixed child ids such as `task-009-A`.
-- Skills may be used as convenience shortcuts in some environments, but pipeline selection must be driven by task metadata and supervisor routing, not by skill names alone.
 
-Pipeline selection rules:
-
-- `pipeline: implementation` is the default for executable work on existing task files.
-- `pipeline: architecture` is used for design work that should result in an architecture artifact plus generated implementation tasks.
-- When a prompt arrives before any task file exists, the supervisor should infer the initial pipeline from intent:
-  - prompts about design, architecture, boundaries, trade-offs, or "split this architecture into tasks" -> architecture pipeline
-  - prompts about implementing, fixing, or "work on task ..." -> implementation pipeline
-  - prompts about e2e, playwright, or end-to-end testing should reserve `pipeline: e2e` for a future dedicated pipeline instead of overloading the two pipelines above
 
 Agent directories:
 
