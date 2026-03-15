@@ -92,19 +92,88 @@ class OrderPersistence(
     private fun batchInsertOrderLines(orderId: Long, lineSnapshots: List<OrderLineSnapshot>) {
         jdbcTemplate.batchUpdate(
             """
-            INSERT INTO order_lines (order_id, menu_item_id, menu_item_name, unit_price, quantity, line_total)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO order_lines (order_id, line_number, menu_item_id, menu_item_name, unit_price, quantity, line_total)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """.trimIndent(),
             lineSnapshots,
             lineSnapshots.size,
         ) { ps, line ->
             ps.setLong(1, orderId)
-            ps.setLong(2, line.menuItemId)
-            ps.setString(3, line.menuItemName)
-            ps.setBigDecimal(4, line.unitPrice)
-            ps.setInt(5, line.quantity)
-            ps.setBigDecimal(6, line.lineTotal)
+            ps.setInt(2, line.lineNumber)
+            ps.setLong(3, line.menuItemId)
+            ps.setString(4, line.menuItemName)
+            ps.setBigDecimal(5, line.unitPrice)
+            ps.setInt(6, line.quantity)
+            ps.setBigDecimal(7, line.lineTotal)
         }
+    }
+
+    private fun batchInsertOutboxEvents(outboxEvents: List<OutboxEvent>) {
+        if (outboxEvents.isEmpty()) {
+            return
+        }
+        jdbcTemplate.batchUpdate(
+            """
+            INSERT INTO order_outbox_events (
+                event_id,
+                aggregate_type,
+                aggregate_id,
+                event_type,
+                routing_key,
+                producer,
+                correlation_id,
+                occurred_at,
+                payload_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """.trimIndent(),
+            outboxEvents,
+            outboxEvents.size,
+        ) { ps, event ->
+            ps.setString(1, event.eventId)
+            ps.setString(2, event.aggregateType)
+            ps.setLong(3, event.aggregateId)
+            ps.setString(4, event.eventType)
+            ps.setString(5, event.routingKey)
+            ps.setString(6, event.producer)
+            ps.setString(7, event.correlationId)
+            ps.setTimestamp(8, Timestamp.from(event.occurredAt))
+            ps.setString(9, event.payloadJson)
+        }
+    }
+
+    fun insertOutboxEvents(outboxEvents: List<OutboxEvent>) {
+        batchInsertOutboxEvents(outboxEvents)
+    }
+
+    fun findUnpublishedOutboxEvents(limit: Int): List<PendingOutboxEvent> {
+        return jdbcTemplate.query(
+            """
+            SELECT event_id, routing_key, payload_json
+            FROM order_outbox_events
+            WHERE published_at IS NULL
+            ORDER BY created_at ASC
+            LIMIT ?
+            """.trimIndent(),
+            { rs, _ ->
+                PendingOutboxEvent(
+                    eventId = rs.getString("event_id"),
+                    routingKey = rs.getString("routing_key"),
+                    payloadJson = rs.getString("payload_json"),
+                )
+            },
+            limit,
+        )
+    }
+
+    fun markOutboxEventPublished(eventId: String) {
+        jdbcTemplate.update(
+            """
+            UPDATE order_outbox_events
+            SET published_at = CURRENT_TIMESTAMP
+            WHERE event_id = ? AND published_at IS NULL
+            """.trimIndent(),
+            eventId,
+        )
     }
 
     private fun findCreatedAt(orderId: Long): Instant {

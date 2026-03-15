@@ -10,6 +10,11 @@ spring:
     change-log: classpath:/db/changelog/db.changelog-master.yaml
   jackson:
     time-zone: UTC
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 server:
   port: ${SERVER_PORT:8083}
@@ -45,3 +50,9 @@ app:
     token-refresh-factor: ${APP_AUTH_REFRESH_FACTOR:0.8}
   menu:
     base-url: ${MENU_SERVICE_BASE_URL:http://localhost:8082}
+  outbox:
+    exchange: ${PRODUCTION_EXCHANGE:restaurant.production.v1}
+    production-item-requested-routing-key: ${PRODUCTION_ITEM_REQUESTED_ROUTING_KEY:item.requested}
+    publisher:
+      fixed-delay-ms: ${ORDER_OUTBOX_PUBLISHER_DELAY_MS:3000}
+      batch-size: ${ORDER_OUTBOX_PUBLISHER_BATCH_SIZE:100}

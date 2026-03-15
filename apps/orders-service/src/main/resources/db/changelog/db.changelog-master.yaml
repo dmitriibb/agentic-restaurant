@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/changes/001-create-orders-schema.yaml
   - include:
       file: db/changelog/changes/002-add-user-display-name.yaml
+  - include:
+      file: db/changelog/changes/003-add-production-item-outbox.yaml

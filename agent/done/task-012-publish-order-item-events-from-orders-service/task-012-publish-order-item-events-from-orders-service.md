@@ -4,7 +4,7 @@
 id: task-012-publish-order-item-events-from-orders-service
 title: Publish per-item production request events from orders-service
 pipeline: implementation
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested
@@ -72,3 +72,11 @@ Extend `orders-service` so every accepted order produces RabbitMQ-ready outbox e
 - Supervisor appends lifecycle audit entries for pickup, status changes, handoffs, retry routing, blocking, PR handoff, and archival.
 - Resolve `source_architecture` from `agent/done/<source_architecture>/<source_architecture>.arch.md` first, with fallback to `agent/tasks/<source_architecture>.arch.md`.
 - Preserve the existing `SubmitOrderResponse.status = ACCEPTED` behavior for the synchronous response.
+
+
+
+
+
+
+
+

@@ -1,0 +1,99 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-order-line-number
+      author: codex
+      changes:
+        - addColumn:
+            tableName: order_lines
+            columns:
+              - column:
+                  name: line_number
+                  type: INT
+                  constraints:
+                    nullable: true
+        - sql:
+            sql: |
+              UPDATE order_lines
+              SET line_number = id
+              WHERE line_number IS NULL
+        - addNotNullConstraint:
+            tableName: order_lines
+            columnName: line_number
+            columnDataType: INT
+        - addUniqueConstraint:
+            tableName: order_lines
+            columnNames: order_id, line_number
+            constraintName: uq_order_lines_order_line_number
+
+  - changeSet:
+      id: 005-create-order-outbox-events-table
+      author: codex
+      changes:
+        - createTable:
+            tableName: order_outbox_events
+            columns:
+              - column:
+                  name: event_id
+                  type: CHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: aggregate_type
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: aggregate_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_type
+                  type: VARCHAR(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: routing_key
+                  type: VARCHAR(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: producer
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: correlation_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: occurred_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payload_json
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: published_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+        - createIndex:
+            tableName: order_outbox_events
+            indexName: idx_order_outbox_events_unpublished
+            columns:
+              - column:
+                  name: published_at
+              - column:
+                  name: created_at

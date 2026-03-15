@@ -16,3 +16,6 @@ app:
   menu:
     base-url: http://localhost:8082
     service-token: menu-internal-token
+  outbox:
+    exchange: restaurant.production.v1
+    production-item-requested-routing-key: item.requested

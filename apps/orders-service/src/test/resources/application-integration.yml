@@ -5,6 +5,9 @@ spring:
     password: orders
   liquibase:
     enabled: true
+  task:
+    scheduling:
+      enabled: false
 
 management:
   endpoint:
@@ -19,3 +22,6 @@ app:
     application-secret: orders-service-secret
   menu:
     base-url: http://localhost:8082
+  outbox:
+    exchange: restaurant.production.v1
+    production-item-requested-routing-key: item.requested

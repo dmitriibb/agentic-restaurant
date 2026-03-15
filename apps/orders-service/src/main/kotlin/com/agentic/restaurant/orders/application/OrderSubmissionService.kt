@@ -6,11 +6,14 @@ import com.agentic.restaurant.orders.clients.AuthValidationClient
 import com.agentic.restaurant.orders.clients.MenuLookupClient
 import com.agentic.restaurant.orders.persistence.OrderLineSnapshot
 import com.agentic.restaurant.orders.persistence.OrderPersistence
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.dao.DuplicateKeyException
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Instant
 import java.util.UUID
 
 sealed interface OrderSubmissionResult {
@@ -25,6 +28,9 @@ class OrderSubmissionService(
     private val authValidationClient: AuthValidationClient,
     private val menuLookupClient: MenuLookupClient,
     private val orderPersistence: OrderPersistence,
+    private val objectMapper: ObjectMapper,
+    @Value("\${app.outbox.production-item-requested-routing-key:item.requested}")
+    private val productionItemRequestedRoutingKey: String,
 ) {
 
     @Transactional
@@ -58,12 +64,13 @@ class OrderSubmissionService(
         }
 
         val resolvedById = menuResolution.items.associateBy { it.id }
-        val lineSnapshots = request.items.map { line ->
+        val lineSnapshots = request.items.mapIndexed { index, line ->
             val menuItem = resolvedById[line.itemId]
                 ?: return OrderSubmissionResult.BadRequest("Unknown menu item id: ${line.itemId}")
             val unitPrice = scale(BigDecimal.valueOf(menuItem.price))
             val lineTotal = scale(unitPrice.multiply(BigDecimal.valueOf(line.quantity.toLong())))
             OrderLineSnapshot(
+                lineNumber = index + 1,
                 menuItemId = line.itemId,
                 menuItemName = menuItem.name,
                 unitPrice = unitPrice,
@@ -88,6 +95,18 @@ class OrderSubmissionService(
             orderPersistence.findOrderByUserIdAndRequestId(request.userId, requestId.toString())
                 ?: return OrderSubmissionResult.BadRequest("Order already exists but could not be loaded")
         }
+
+        val outboxEvents = buildProductionItemRequestedOutboxEvents(
+            objectMapper = objectMapper,
+            orderId = createdOrder.id,
+            requestId = requestId.toString(),
+            userId = request.userId,
+            userDisplayName = tokenValidation.displayName,
+            lineSnapshots = lineSnapshots,
+            occurredAt = Instant.now(),
+            routingKey = productionItemRequestedRoutingKey,
+        )
+        orderPersistence.insertOutboxEvents(outboxEvents)
 
         return OrderSubmissionResult.Accepted(createdOrder.toResponse())
     }

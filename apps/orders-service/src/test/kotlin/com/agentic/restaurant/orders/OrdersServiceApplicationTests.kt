@@ -46,6 +46,7 @@ class OrdersServiceApplicationTests {
 
     @BeforeEach
     fun setup() {
+        jdbcTemplate.update("DELETE FROM order_outbox_events")
         jdbcTemplate.update("DELETE FROM order_lines")
         jdbcTemplate.update("DELETE FROM orders")
 
@@ -81,9 +82,18 @@ class OrdersServiceApplicationTests {
             """.trimIndent(),
             java.lang.Integer::class.java,
         )
+        val outboxTableCount = jdbcTemplate.queryForObject(
+            """
+            SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE() AND table_name = 'order_outbox_events'
+            """.trimIndent(),
+            java.lang.Integer::class.java,
+        )
 
         assertThat(ordersTableCount).isEqualTo(1)
         assertThat(orderLinesTableCount).isEqualTo(1)
+        assertThat(outboxTableCount).isEqualTo(1)
     }
 
     @Test
@@ -126,8 +136,10 @@ class OrdersServiceApplicationTests {
 
         val ordersCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders", Int::class.java)!!
         val orderLinesCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM order_lines", Int::class.java)!!
+        val outboxCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM order_outbox_events", Int::class.java)!!
         assertThat(ordersCount).isEqualTo(1)
         assertThat(orderLinesCount).isEqualTo(2)
+        assertThat(outboxCount).isEqualTo(3)
 
         val storedTotal = jdbcTemplate.queryForObject(
             "SELECT total_amount FROM orders WHERE id = ?",
@@ -149,6 +161,19 @@ class OrdersServiceApplicationTests {
 
         assertThat(firstLineName).isEqualTo("Margherita Pizza")
         assertThat(firstLinePrice).isEqualByComparingTo(BigDecimal("12.50"))
+
+        val storedLineNumbers = jdbcTemplate.queryForList(
+            "SELECT line_number FROM order_lines WHERE order_id = ? ORDER BY line_number ASC",
+            Int::class.java,
+            orderId,
+        )
+        assertThat(storedLineNumbers).containsExactly(1, 2)
+
+        val eventTypeCount = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM order_outbox_events WHERE event_type = 'production.item.requested.v1'",
+            Int::class.java,
+        )!!
+        assertThat(eventTypeCount).isEqualTo(3)
     }
 
     @Test
@@ -195,9 +220,11 @@ class OrdersServiceApplicationTests {
 
         val ordersCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM orders", Int::class.java)!!
         val orderLinesCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM order_lines", Int::class.java)!!
+        val outboxCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM order_outbox_events", Int::class.java)!!
 
         assertThat(ordersCount).isEqualTo(1)
         assertThat(orderLinesCount).isEqualTo(1)
+        assertThat(outboxCount).isEqualTo(1)
     }
 
     @Test
