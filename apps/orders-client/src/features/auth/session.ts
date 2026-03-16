@@ -1,11 +1,26 @@
 import type { ClientType, UserSummary } from "./api";
 
+export type UiMode = "registered" | "guest";
+
 export type SessionAuth = {
   token: string;
+  mode: UiMode;
   user: UserSummary & { clientType?: ClientType };
 };
 
 export const AUTH_STORAGE_KEY = "orders-client-auth";
+
+function normalizeMode(candidate: unknown, clientType?: ClientType): UiMode {
+  if (candidate === "registered" || candidate === "guest") {
+    return candidate;
+  }
+
+  if (clientType === "GUEST_USER") {
+    return "guest";
+  }
+
+  return "registered";
+}
 
 export function readAuthSession(): SessionAuth | null {
   const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
@@ -14,11 +29,20 @@ export function readAuthSession(): SessionAuth | null {
   }
 
   try {
-    const parsed = JSON.parse(raw) as SessionAuth;
+    const parsed = JSON.parse(raw) as Partial<SessionAuth> & {
+      user?: (UserSummary & { clientType?: ClientType }) | null;
+      mode?: unknown;
+    };
+
     if (!parsed.token || !parsed.user?.id || !parsed.user?.login) {
       return null;
     }
-    return parsed;
+
+    return {
+      token: parsed.token,
+      user: parsed.user,
+      mode: normalizeMode(parsed.mode, parsed.user.clientType)
+    };
   } catch {
     return null;
   }

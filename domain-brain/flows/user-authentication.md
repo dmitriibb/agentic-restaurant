@@ -18,7 +18,7 @@ Authenticate registered users, guest users, display-screen application callers, 
 ## Guest Authentication Flow
 
 1. `orders-client` shows a landing screen with `Login as Registered` and `Login as Guest`.
-2. After the terminal user chooses guest mode and enters a display name, `orders-client` acquires an application token via `POST /api/v1/auth/applications/token`.
+2. After the terminal user chooses guest mode and enters a display name, `orders-client` acquires an application token via `POST /api/v1/auth/applications/token` (lazy acquisition, not at initial app load).
 3. Client calls `POST /api/v1/auth/guests` with bearer app token.
 4. `users-service` validates caller is `APPLICATION`, creates a `GUEST_USER`, and issues a 24-hour JWT.
 5. Client stores the guest JWT together with `mode = guest` in session storage and proceeds with menu browsing and order submission.

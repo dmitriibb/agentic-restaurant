@@ -4,7 +4,7 @@
 id: task-018-gate-orders-client-with-mode-based-auth-shell
 title: Gate orders-client with mode-based auth shell
 pipeline: implementation
-status: queued
+status: done
 priority: high
 type: feature
 architecture: not_requested

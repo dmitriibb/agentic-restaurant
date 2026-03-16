@@ -1,27 +1,37 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { createGuestUser, login, type UserSummary } from "./features/auth/api";
 import { getAppToken } from "./features/auth/appToken";
-import { readAuthSession, writeAuthSession } from "./features/auth/session";
+import { readAuthSession, writeAuthSession, type UiMode } from "./features/auth/session";
 import { upsertBasketLine, updateLineQuantity, type BasketLine } from "./features/basket/model";
 import { fetchMenu, type MenuItem } from "./features/menu/api";
 import { submitOrder, type OrderSubmitResponse } from "./features/orders/api";
-import { serviceBaseUrls } from "./shared/api/config";
 
 function formatAmount(value: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 }
 
-type AuthEntryMode = "registered" | "guest";
+type EntryStep = "landing" | "registered_credentials" | "guest_name" | "main";
 
 function displayUserName(user: UserSummary): string {
   return user.displayName ?? user.login;
+}
+
+function formatMode(mode: UiMode | null): string {
+  if (mode === "registered") {
+    return "registered user";
+  }
+  if (mode === "guest") {
+    return "guest";
+  }
+  return "not selected";
 }
 
 export function App() {
   const existingSession = readAuthSession();
   const [token, setToken] = useState<string>(existingSession?.token ?? "");
   const [user, setUser] = useState<UserSummary | null>(existingSession?.user ?? null);
-  const [authEntryMode, setAuthEntryMode] = useState<AuthEntryMode>("registered");
+  const [mode, setMode] = useState<UiMode | null>(existingSession?.mode ?? null);
+  const [entryStep, setEntryStep] = useState<EntryStep>(existingSession ? "main" : "landing");
 
   const [loginValue, setLoginValue] = useState("");
   const [password, setPassword] = useState("");
@@ -44,18 +54,14 @@ export function App() {
     [basket]
   );
 
-  const isAuthenticated = Boolean(token && user);
+  const isAuthenticated = Boolean(token && user && mode);
 
-  useEffect(() => {
-    void getAppToken().catch((error) => {
-      console.error("Failed to initialize application token.", error);
-    });
-  }, []);
-
-  async function completeAuthentication(nextToken: string, nextUser: UserSummary): Promise<void> {
-    const session = { token: nextToken, user: nextUser };
+  async function completeAuthentication(nextToken: string, nextUser: UserSummary, nextMode: UiMode): Promise<void> {
+    const session = { token: nextToken, user: nextUser, mode: nextMode };
     setToken(nextToken);
     setUser(nextUser);
+    setMode(nextMode);
+    setEntryStep("main");
     writeAuthSession(session);
 
     setMenuLoading(true);
@@ -75,7 +81,7 @@ export function App() {
 
     try {
       const response = await login(loginValue, password);
-      await completeAuthentication(response.accessToken, response.user);
+      await completeAuthentication(response.accessToken, response.user, "registered");
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Unexpected login error.");
     } finally {
@@ -98,7 +104,7 @@ export function App() {
     try {
       const appToken = await getAppToken();
       const response = await createGuestUser(normalizedDisplayName, appToken);
-      await completeAuthentication(response.accessToken, response.user);
+      await completeAuthentication(response.accessToken, response.user, "guest");
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Guest login failed.");
     } finally {
@@ -141,17 +147,26 @@ export function App() {
     }
   }
 
+  function resetToLanding() {
+    setEntryStep("landing");
+    setAuthError(null);
+    setAuthLoading(false);
+    setLoginValue("");
+    setPassword("");
+    setGuestDisplayName("");
+  }
+
   function logout() {
     setToken("");
     setUser(null);
+    setMode(null);
     setMenuItems([]);
     setBasket([]);
     setLastOrder(null);
     setAuthError(null);
     setMenuError(null);
     setSubmitError(null);
-    setAuthEntryMode("registered");
-    setGuestDisplayName("");
+    resetToLanding();
     writeAuthSession(null);
   }
 
@@ -161,199 +176,200 @@ export function App() {
         <div>
           <p className="eyebrow">Restaurant Platform</p>
           <h1>Orders Client</h1>
-          <p className="subtitle">Login, browse menu, build basket, and submit orders in one flow.</p>
+          <p className="subtitle">Choose a mode, authenticate, then browse menu and submit orders.</p>
         </div>
         <div className="hero-actions">
-          <button className="action" type="button" onClick={reloadMenu} disabled={!isAuthenticated || menuLoading}>
-            Reload Menu
-          </button>
-          <button className="action ghost" type="button" onClick={logout} disabled={!isAuthenticated}>
-            Logout
-          </button>
+          {isAuthenticated ? (
+            <>
+              <p className="mode-chip" data-testid="mode-chip">
+                Mode: {formatMode(mode)}
+              </p>
+              <button className="action" type="button" onClick={reloadMenu} disabled={menuLoading}>
+                Reload Menu
+              </button>
+              <button className="action ghost" type="button" onClick={logout}>
+                Logout
+              </button>
+            </>
+          ) : null}
         </div>
       </header>
 
-      <main className="content-grid">
-        <section className="surface-card" aria-label="authentication">
-          <h2>Authentication</h2>
-          {isAuthenticated && user ? (
-            <div className="status-panel" data-testid="auth-status">
-              <p>
-                Signed in as <strong>{displayUserName(user)}</strong> (user #{user.id})
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="hero-actions" style={{ marginBottom: "1rem" }}>
+      {!isAuthenticated ? (
+        <main className="entry-shell" aria-label="authentication" data-testid="auth-gate">
+          {entryStep === "landing" ? (
+            <section className="surface-card entry-card">
+              <h2>Choose How You Want to Continue</h2>
+              <p className="muted">Pick a mode before the menu and basket workspace is shown.</p>
+              <div className="hero-actions">
                 <button
-                  className={authEntryMode === "registered" ? "action" : "action ghost"}
+                  className="action"
                   type="button"
                   onClick={() => {
-                    setAuthEntryMode("registered");
+                    setEntryStep("registered_credentials");
                     setAuthError(null);
                   }}
                 >
-                  Login (Registered)
+                  Login as Registered
                 </button>
                 <button
-                  className={authEntryMode === "guest" ? "action" : "action ghost"}
+                  className="action ghost"
                   type="button"
                   onClick={() => {
-                    setAuthEntryMode("guest");
+                    setEntryStep("guest_name");
                     setAuthError(null);
                   }}
                 >
-                  Continue as Guest
+                  Login as Guest
                 </button>
               </div>
+            </section>
+          ) : null}
 
-              {authEntryMode === "registered" ? (
-                <form className="auth-form" onSubmit={onLogin}>
-                  <label>
-                    Login
-                    <input
-                      value={loginValue}
-                      onChange={(event) => setLoginValue(event.target.value)}
-                      autoComplete="username"
-                      required
-                    />
-                  </label>
-                  <label>
-                    Password
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      autoComplete="current-password"
-                      required
-                    />
-                  </label>
+          {entryStep === "registered_credentials" ? (
+            <section className="surface-card entry-card">
+              <h2>Registered Login</h2>
+              <form className="auth-form" onSubmit={onLogin}>
+                <label>
+                  Login
+                  <input
+                    value={loginValue}
+                    onChange={(event) => setLoginValue(event.target.value)}
+                    autoComplete="username"
+                    required
+                  />
+                </label>
+                <label>
+                  Password
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                </label>
+                <div className="hero-actions">
                   <button className="action" type="submit" disabled={authLoading}>
                     {authLoading ? "Signing in..." : "Sign In"}
                   </button>
-                </form>
-              ) : (
-                <form className="auth-form" onSubmit={onGuestLogin}>
-                  <label>
-                    Display Name
-                    <input
-                      value={guestDisplayName}
-                      maxLength={100}
-                      onChange={(event) => setGuestDisplayName(event.target.value)}
-                      required
-                    />
-                  </label>
+                  <button className="action ghost" type="button" onClick={resetToLanding} disabled={authLoading}>
+                    Back
+                  </button>
+                </div>
+              </form>
+            </section>
+          ) : null}
+
+          {entryStep === "guest_name" ? (
+            <section className="surface-card entry-card">
+              <h2>Guest Login</h2>
+              <form className="auth-form" onSubmit={onGuestLogin}>
+                <label>
+                  Display Name
+                  <input
+                    value={guestDisplayName}
+                    maxLength={100}
+                    onChange={(event) => setGuestDisplayName(event.target.value)}
+                    required
+                  />
+                </label>
+                <div className="hero-actions">
                   <button className="action" type="submit" disabled={authLoading}>
                     {authLoading ? "Starting guest session..." : "Start Guest Session"}
                   </button>
-                </form>
-              )}
-            </>
-          )}
-          {authError && <p className="error-text">{authError}</p>}
-        </section>
-
-        <section className="surface-card" aria-label="menu">
-          <h2>Menu</h2>
-          {!isAuthenticated ? (
-            <p className="muted">Sign in to load menu items.</p>
-          ) : menuLoading ? (
-            <p className="muted">Loading menu...</p>
-          ) : (
-            <ul className="menu-list" data-testid="menu-list">
-              {menuItems.map((item) => (
-                <li key={item.id}>
-                  <div>
-                    <strong>{item.name}</strong>
-                    <p>{item.description}</p>
-                    <span>{formatAmount(item.price)}</span>
-                  </div>
-                  <button className="action" type="button" onClick={() => setBasket((prev) => upsertBasketLine(prev, item))}>
-                    Add
+                  <button className="action ghost" type="button" onClick={resetToLanding} disabled={authLoading}>
+                    Back
                   </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {menuError && <p className="error-text">{menuError}</p>}
-        </section>
+                </div>
+              </form>
+            </section>
+          ) : null}
 
-        <section className="surface-card" aria-label="basket and checkout">
-          <h2>Basket + Checkout</h2>
-          {basket.length === 0 ? (
-            <p className="muted">Basket is empty.</p>
-          ) : (
-            <ul className="basket-list" data-testid="basket-list">
-              {basket.map((line) => (
-                <li key={line.item.id}>
-                  <div>
-                    <strong>{line.item.name}</strong>
-                    <p>{formatAmount(line.item.price)} each</p>
-                  </div>
-                  <div className="qty-controls">
-                    <button
-                      className="action ghost"
-                      type="button"
-                      onClick={() => setBasket((prev) => updateLineQuantity(prev, line.item.id, line.quantity - 1))}
-                    >
-                      -
+          {authError ? <p className="error-text">{authError}</p> : null}
+        </main>
+      ) : (
+        <main className="content-grid">
+          <section className="surface-card" aria-label="menu">
+            <h2>Menu</h2>
+            {menuLoading ? (
+              <p className="muted">Loading menu...</p>
+            ) : (
+              <ul className="menu-list" data-testid="menu-list">
+                {menuItems.map((item) => (
+                  <li key={item.id}>
+                    <div>
+                      <strong>{item.name}</strong>
+                      <p>{item.description}</p>
+                      <span>{formatAmount(item.price)}</span>
+                    </div>
+                    <button className="action" type="button" onClick={() => setBasket((prev) => upsertBasketLine(prev, item))}>
+                      Add
                     </button>
-                    <span data-testid={`qty-${line.item.id}`}>{line.quantity}</span>
-                    <button
-                      className="action ghost"
-                      type="button"
-                      onClick={() => setBasket((prev) => updateLineQuantity(prev, line.item.id, line.quantity + 1))}
-                    >
-                      +
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {menuError ? <p className="error-text">{menuError}</p> : null}
+          </section>
 
-          <div className="checkout-row">
-            <p>
-              Total: <strong data-testid="basket-total">{formatAmount(basketTotal)}</strong>
-            </p>
-            <button
-              className="action"
-              type="button"
-              onClick={placeOrder}
-              disabled={!isAuthenticated || basket.length === 0 || submitLoading}
-            >
-              {submitLoading ? "Submitting..." : "Submit Order"}
-            </button>
-          </div>
+          <section className="surface-card" aria-label="basket and checkout">
+            <h2>Basket + Checkout</h2>
+            {basket.length === 0 ? (
+              <p className="muted">Basket is empty.</p>
+            ) : (
+              <ul className="basket-list" data-testid="basket-list">
+                {basket.map((line) => (
+                  <li key={line.item.id}>
+                    <div>
+                      <strong>{line.item.name}</strong>
+                      <p>{formatAmount(line.item.price)} each</p>
+                    </div>
+                    <div className="qty-controls">
+                      <button
+                        className="action ghost"
+                        type="button"
+                        onClick={() => setBasket((prev) => updateLineQuantity(prev, line.item.id, line.quantity - 1))}
+                      >
+                        -
+                      </button>
+                      <span data-testid={`qty-${line.item.id}`}>{line.quantity}</span>
+                      <button
+                        className="action ghost"
+                        type="button"
+                        onClick={() => setBasket((prev) => updateLineQuantity(prev, line.item.id, line.quantity + 1))}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-          {submitError && <p className="error-text">{submitError}</p>}
-          {lastOrder && user && (
-            <div className="status-panel" data-testid="order-confirmation">
+            <div className="checkout-row">
               <p>
-                Order <strong>#{lastOrder.orderId}</strong> accepted ({lastOrder.status}).
+                Total: <strong data-testid="basket-total">{formatAmount(basketTotal)}</strong>
               </p>
-              <p>
-                User: <strong>{lastOrder.userDisplayName ?? displayUserName(user)}</strong> (id #{user.id})
-              </p>
+              <button className="action" type="button" onClick={placeOrder} disabled={basket.length === 0 || submitLoading}>
+                {submitLoading ? "Submitting..." : "Submit Order"}
+              </button>
             </div>
-          )}
-        </section>
-      </main>
 
-      <footer className="service-grid" data-testid="service-config">
-        <div>
-          <strong>users-service</strong>
-          <span>{serviceBaseUrls.usersService}</span>
-        </div>
-        <div>
-          <strong>menu-service</strong>
-          <span>{serviceBaseUrls.menuService}</span>
-        </div>
-        <div>
-          <strong>orders-service</strong>
-          <span>{serviceBaseUrls.ordersService}</span>
-        </div>
-      </footer>
+            {submitError ? <p className="error-text">{submitError}</p> : null}
+            {lastOrder && user ? (
+              <div className="status-panel" data-testid="order-confirmation">
+                <p>
+                  Order <strong>#{lastOrder.orderId}</strong> accepted ({lastOrder.status}).
+                </p>
+                <p>
+                  User: <strong>{lastOrder.userDisplayName ?? displayUserName(user)}</strong> (id #{user.id})
+                </p>
+              </div>
+            ) : null}
+          </section>
+        </main>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
+import { getAppToken } from "./features/auth/appToken";
 
 vi.mock("./features/auth/appToken", () => ({
   getAppToken: vi.fn().mockResolvedValue("app-token")
@@ -12,17 +13,20 @@ describe("Orders client flows", () => {
     sessionStorage.clear();
   });
 
-  it("shows both auth entry buttons", () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ items: [] })));
+  it("shows mode-gated landing actions before authentication", () => {
+    vi.stubGlobal("fetch", vi.fn());
 
     render(<App />);
 
-    expect(screen.getByRole("button", { name: "Login (Registered)" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Continue as Guest" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Login as Registered" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Login as Guest" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Menu" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Basket + Checkout" })).not.toBeInTheDocument();
   });
 
   it("completes registered login, menu load, basket updates, and order submission", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(
         jsonResponse({
           accessToken: "jwt-token",
@@ -53,12 +57,13 @@ describe("Orders client flows", () => {
 
     render(<App />);
 
+    fireEvent.click(screen.getByRole("button", { name: "Login as Registered" }));
     fireEvent.change(screen.getByLabelText("Login"), { target: { value: "demo-user" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secret" } });
     fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
 
-    await screen.findByTestId("auth-status");
     await screen.findByText("Pizza");
+    expect(screen.getByTestId("mode-chip")).toHaveTextContent("Mode: registered user");
 
     fireEvent.click(screen.getAllByRole("button", { name: "Add" })[0]);
     expect(screen.getByTestId("qty-1")).toHaveTextContent("1");
@@ -91,8 +96,9 @@ describe("Orders client flows", () => {
     });
   });
 
-  it("completes guest login flow and loads menu", async () => {
-    const fetchMock = vi.fn()
+  it("completes guest login flow, loads menu, and acquires app token lazily", async () => {
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(
         jsonResponse({
           accessToken: "guest-jwt",
@@ -111,12 +117,16 @@ describe("Orders client flows", () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Continue as Guest" }));
+    expect(vi.mocked(getAppToken)).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Login as Guest" }));
+    expect(vi.mocked(getAppToken)).not.toHaveBeenCalled();
+
     fireEvent.change(screen.getByLabelText("Display Name"), { target: { value: "Walk In" } });
     fireEvent.click(screen.getByRole("button", { name: "Start Guest Session" }));
 
-    await screen.findByTestId("auth-status");
     await screen.findByText("Pizza");
+    expect(screen.getByTestId("mode-chip")).toHaveTextContent("Mode: guest");
+    expect(vi.mocked(getAppToken)).toHaveBeenCalledTimes(1);
 
     expect(fetchMock.mock.calls[0][0]).toContain("/api/v1/auth/guests");
     const guestRequest = fetchMock.mock.calls[0][1] as RequestInit;
@@ -127,10 +137,14 @@ describe("Orders client flows", () => {
     expect(menuRequest.headers).toMatchObject({ Authorization: "Bearer guest-jwt" });
   });
 
-  it("restores previous auth session from storage", async () => {
+  it("restores previous auth session from storage with mode metadata", async () => {
     sessionStorage.setItem(
       "orders-client-auth",
-      JSON.stringify({ token: "stored-token", user: { id: 42, login: "stored-user", clientType: "REGISTERED_USER" } })
+      JSON.stringify({
+        token: "stored-token",
+        mode: "registered",
+        user: { id: 42, login: "stored-user", clientType: "REGISTERED_USER" }
+      })
     );
 
     const fetchMock = vi.fn().mockResolvedValue(
@@ -142,7 +156,7 @@ describe("Orders client flows", () => {
 
     render(<App />);
 
-    expect(screen.getByTestId("auth-status")).toHaveTextContent("stored-user");
+    expect(screen.getByTestId("mode-chip")).toHaveTextContent("Mode: registered user");
 
     fireEvent.click(screen.getByRole("button", { name: "Reload Menu" }));
 
