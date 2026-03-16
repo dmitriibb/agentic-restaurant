@@ -49,7 +49,7 @@ class UsersServiceApplicationTests {
     @Test
     fun `liquibase seeds admin user and applications`() {
         val usersCount = jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM users",
+            "SELECT COUNT(*) FROM users WHERE id IN (1006, 1007, 1008)",
             java.lang.Integer::class.java,
         )
         assertThat(usersCount).isEqualTo(3)

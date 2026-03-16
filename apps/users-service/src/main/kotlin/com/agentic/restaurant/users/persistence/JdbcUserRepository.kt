@@ -85,9 +85,11 @@ class JdbcUserRepository(
             if (user.applicationId != null) ps.setLong(7, user.applicationId) else ps.setNull(7, java.sql.Types.BIGINT)
             ps
         }, keyHolder)
+        val generatedKeyEntry = keyHolder.keyList.firstOrNull()
+            ?: throw IllegalStateException("Failed to get generated key for user")
         val generatedId = when {
-            keyHolder.key != null -> keyHolder.key!!.toLong()
-            keyHolder.keys?.containsKey("id") == true -> (keyHolder.keys!!["id"] as Number).toLong()
+            generatedKeyEntry["id"] is Number -> (generatedKeyEntry["id"] as Number).toLong()
+            generatedKeyEntry.values.firstOrNull() is Number -> (generatedKeyEntry.values.first() as Number).toLong()
             else -> throw IllegalStateException("Failed to get generated key for user")
         }
         return findById(generatedId) ?: throw IllegalStateException("Failed to find created user with id $generatedId")
