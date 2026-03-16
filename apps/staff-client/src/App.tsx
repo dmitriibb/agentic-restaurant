@@ -1,6 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { login, type UserSummary } from "./features/auth/api";
-import { readAuthSession, writeAuthSession } from "./features/auth/session";
+import { getDisplayToken, clearDisplayToken } from "./features/auth/appToken";
+import {
+  readPersistedSession,
+  writeInteractiveSession,
+  writeDisplaySession,
+  clearSession,
+  type UiSession,
+} from "./features/auth/session";
 import {
   fetchOrders,
   fetchOrderDetail,
@@ -18,11 +25,37 @@ import {
   STATUS_BLOCKED,
   STATUS_READY,
 } from "./features/production/types";
-import { serviceBaseUrls } from "./shared/api/config";
 
 const POLL_INTERVAL_MS = 5000;
 
 const STATUS_SECTIONS = [STATUS_QUEUED, STATUS_IN_PROGRESS, STATUS_BLOCKED, STATUS_READY] as const;
+
+type AppView =
+  | "landing"
+  | "interactive_credentials"
+  | "display_loading"
+  | "interactive_board"
+  | "display_board";
+
+function computeInitialState(): { view: AppView; session: UiSession | null } {
+  const persisted = readPersistedSession();
+  if (!persisted) {
+    return { view: "landing", session: null };
+  }
+  if (persisted.mode === "interactive") {
+    return {
+      view: "interactive_board",
+      session: {
+        mode: "interactive",
+        authKind: "user",
+        accessToken: persisted.token,
+        user: persisted.user,
+      },
+    };
+  }
+  // display mode: need to reacquire token
+  return { view: "display_loading", session: null };
+}
 
 function displayUserName(user: UserSummary): string {
   return user.displayName ?? user.login;
@@ -65,10 +98,14 @@ function statusBadgeClass(status: string): string {
 }
 
 export function App() {
-  // Auth state
-  const existingSession = readAuthSession();
-  const [token, setToken] = useState<string>(existingSession?.token ?? "");
-  const [user, setUser] = useState<UserSummary | null>(existingSession?.user ?? null);
+  const initial = computeInitialState();
+
+  // View state machine
+  const [view, setView] = useState<AppView>(initial.view);
+  const [session, setSession] = useState<UiSession | null>(initial.session);
+  const [displayError, setDisplayError] = useState<string | null>(null);
+
+  // Auth form state
   const [loginValue, setLoginValue] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
@@ -89,18 +126,51 @@ export function App() {
   const [commandLoading, setCommandLoading] = useState<string | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
 
-  const isAuthenticated = Boolean(token && user);
+  // --- Display mode token acquisition ---
 
-  // Login handler
+  async function enterDisplayMode() {
+    setView("display_loading");
+    setDisplayError(null);
+    try {
+      const token = await getDisplayToken();
+      const newSession: UiSession = {
+        mode: "display",
+        authKind: "application",
+        accessToken: token,
+      };
+      writeDisplaySession();
+      setSession(newSession);
+      setView("display_board");
+    } catch (error) {
+      setDisplayError(error instanceof Error ? error.message : "Failed to connect display mode.");
+    }
+  }
+
+  // Auto-enter display mode on reload with persisted display session
+  useEffect(() => {
+    if (view === "display_loading" && !session) {
+      void enterDisplayMode();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // --- Interactive login ---
+
   async function onLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAuthLoading(true);
     setAuthError(null);
     try {
       const response = await login(loginValue, password);
-      setToken(response.accessToken);
-      setUser(response.user);
-      writeAuthSession({ token: response.accessToken, user: response.user });
+      const newSession: UiSession = {
+        mode: "interactive",
+        authKind: "user",
+        accessToken: response.accessToken,
+        user: response.user,
+      };
+      writeInteractiveSession(response.accessToken, response.user);
+      setSession(newSession);
+      setView("interactive_board");
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Login failed.");
     } finally {
@@ -108,17 +178,36 @@ export function App() {
     }
   }
 
-  // Logout
-  function logout() {
-    setToken("");
-    setUser(null);
+  // --- Navigation helpers ---
+
+  function goBackToLanding() {
+    setLoginValue("");
+    setPassword("");
+    setAuthError(null);
+    setDisplayError(null);
+    clearDisplayToken();
+    setView("landing");
+  }
+
+  function resetAllState() {
+    clearDisplayToken();
+    clearSession();
+    setSession(null);
     setOrders([]);
     setSelectedOrderId(null);
     setOrderDetail(null);
-    writeAuthSession(null);
+    setBoardError(null);
+    setDetailError(null);
+    setCommandError(null);
+    setLoginValue("");
+    setPassword("");
+    setAuthError(null);
+    setDisplayError(null);
+    setView("landing");
   }
 
-  // Load board
+  // --- Board loading ---
+
   async function loadBoard(currentToken: string) {
     setBoardLoading(true);
     setBoardError(null);
@@ -132,15 +221,16 @@ export function App() {
     }
   }
 
-  // Load order detail
+  // --- Detail loading (interactive only) ---
+
   async function loadDetail(orderId: number) {
-    if (!token) return;
+    if (!session) return;
     setSelectedOrderId(orderId);
     setDetailLoading(true);
     setDetailError(null);
     setCommandError(null);
     try {
-      const data = await fetchOrderDetail(token, orderId);
+      const data = await fetchOrderDetail(session.accessToken, orderId);
       setOrderDetail(data);
     } catch (error) {
       setDetailError(error instanceof Error ? error.message : "Failed to load order.");
@@ -149,16 +239,16 @@ export function App() {
     }
   }
 
-  // Send item command
+  // --- Item command (interactive only) ---
+
   async function onItemCommand(itemId: string, command: ItemCommand, reason?: string) {
-    if (!token || !selectedOrderId) return;
+    if (!session || !selectedOrderId) return;
     setCommandLoading(itemId);
     setCommandError(null);
     try {
-      await sendItemCommand(token, itemId, command, { reason });
-      // Reload detail and board after successful command
+      await sendItemCommand(session.accessToken, itemId, command, { reason });
       await loadDetail(selectedOrderId);
-      await loadBoard(token);
+      await loadBoard(session.accessToken);
     } catch (error) {
       setCommandError(error instanceof Error ? error.message : "Command failed.");
     } finally {
@@ -166,49 +256,79 @@ export function App() {
     }
   }
 
-  // Auto-load board on auth and poll
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    void loadBoard(token);
-    const interval = setInterval(() => { void loadBoard(token); }, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [isAuthenticated, token]);
+  // --- Auto-load board on session established ---
 
-  // Helper: group orders by status
+  const isBoardView = view === "interactive_board" || view === "display_board";
+
+  useEffect(() => {
+    if (!isBoardView || !session) return;
+    void loadBoard(session.accessToken);
+    const interval = setInterval(() => {
+      void loadBoard(session.accessToken);
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBoardView, session?.accessToken]);
+
+  // --- Helpers ---
+
   function ordersByStatus(status: string): ProductionOrder[] {
     return orders.filter((o) => o.Status === status);
   }
 
-  return (
-    <div className="app-shell">
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Restaurant Platform</p>
-          <h1>Staff Client</h1>
-          <p className="subtitle">Production Board</p>
-        </div>
-        <div className="hero-actions">
-          {isAuthenticated && user && (
-            <span className="auth-info" data-testid="auth-status">
-              Signed in as <strong>{displayUserName(user)}</strong>
-            </span>
-          )}
-          <button
-            className="action"
-            type="button"
-            onClick={() => void loadBoard(token)}
-            disabled={!isAuthenticated || boardLoading}
-          >
-            Refresh
-          </button>
-          <button className="action ghost" type="button" onClick={logout} disabled={!isAuthenticated}>
-            Logout
-          </button>
-        </div>
-      </header>
+  // --- Render ---
 
-      <main>
-        {!isAuthenticated ? (
+  // Landing screen
+  if (view === "landing") {
+    return (
+      <div className="app-shell">
+        <header className="hero">
+          <div>
+            <p className="eyebrow">Restaurant Platform</p>
+            <h1>Staff Client</h1>
+            <p className="subtitle">Production Board</p>
+          </div>
+        </header>
+        <main>
+          <section className="landing-screen" aria-label="mode selection" data-testid="mode-selection">
+            <h2>Staff Client</h2>
+            <p>Select a mode to continue</p>
+            <div className="landing-actions">
+              <button
+                className="action landing-btn"
+                type="button"
+                onClick={() => setView("interactive_credentials")}
+                data-testid="mode-interactive"
+              >
+                Interactive
+              </button>
+              <button
+                className="action landing-btn"
+                type="button"
+                onClick={() => void enterDisplayMode()}
+                data-testid="mode-display"
+              >
+                Display
+              </button>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  // Interactive credentials screen
+  if (view === "interactive_credentials") {
+    return (
+      <div className="app-shell">
+        <header className="hero">
+          <div>
+            <p className="eyebrow">Restaurant Platform</p>
+            <h1>Staff Client</h1>
+            <p className="subtitle">Production Board</p>
+          </div>
+        </header>
+        <main>
           <section className="surface-card auth-section" aria-label="authentication">
             <h2>Staff Sign In</h2>
             <form className="auth-form" onSubmit={onLogin}>
@@ -231,13 +351,141 @@ export function App() {
                   required
                 />
               </label>
-              <button className="action" type="submit" disabled={authLoading}>
-                {authLoading ? "Signing in..." : "Sign In"}
-              </button>
+              <div className="auth-form-actions">
+                <button className="action ghost" type="button" onClick={goBackToLanding}>Back</button>
+                <button className="action" type="submit" disabled={authLoading}>
+                  {authLoading ? "Signing in..." : "Sign In"}
+                </button>
+              </div>
             </form>
             {authError && <p className="error-text">{authError}</p>}
           </section>
+        </main>
+      </div>
+    );
+  }
+
+  // Display loading screen
+  if (view === "display_loading") {
+    return (
+      <div className="app-shell">
+        <header className="hero">
+          <div>
+            <p className="eyebrow">Restaurant Platform</p>
+            <h1>Staff Client</h1>
+            <p className="subtitle">Production Board</p>
+          </div>
+        </header>
+        <main>
+          <section className="landing-screen" aria-label="display loading" data-testid="display-loading">
+            <p>Connecting display mode...</p>
+            {displayError && (
+              <>
+                <p className="error-text">{displayError}</p>
+                <button className="action" type="button" onClick={goBackToLanding}>Back</button>
+              </>
+            )}
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  // Board views (interactive_board and display_board)
+  const isDisplay = view === "display_board";
+
+  return (
+    <div className="app-shell">
+      <header className="hero">
+        <div>
+          <p className="eyebrow">Restaurant Platform</p>
+          <h1>Staff Client</h1>
+          <p className="subtitle">Production Board</p>
+        </div>
+        <div className="hero-actions">
+          {session && (
+            <span className="mode-chip" data-testid="mode-chip">
+              Mode: {session.mode}
+            </span>
+          )}
+          {!isDisplay && session?.user && (
+            <span className="auth-info" data-testid="auth-status">
+              Signed in as <strong>{displayUserName(session.user)}</strong>
+            </span>
+          )}
+          {!isDisplay && (
+            <button
+              className="action"
+              type="button"
+              onClick={() => session && void loadBoard(session.accessToken)}
+              disabled={boardLoading}
+            >
+              Refresh
+            </button>
+          )}
+          {isDisplay && (
+            <button
+              className="action"
+              type="button"
+              onClick={() => session && void loadBoard(session.accessToken)}
+              disabled={boardLoading}
+            >
+              Refresh
+            </button>
+          )}
+          {!isDisplay ? (
+            <button className="action ghost" type="button" onClick={resetAllState}>
+              Logout
+            </button>
+          ) : (
+            <button className="action ghost" type="button" onClick={resetAllState}>
+              Exit
+            </button>
+          )}
+        </div>
+      </header>
+
+      <main>
+        {isDisplay ? (
+          /* Display board: read-only, no detail panel */
+          <div className="board-layout" style={{ gridTemplateColumns: "1fr" }}>
+            <section className="order-list-panel" aria-label="order list" data-testid="order-list">
+              <h2>Orders</h2>
+              {boardLoading && orders.length === 0 && <p className="muted">Loading orders...</p>}
+              {boardError && <p className="error-text">{boardError}</p>}
+              {STATUS_SECTIONS.map((status) => {
+                const group = ordersByStatus(status);
+                if (group.length === 0) return null;
+                return (
+                  <div className="status-section" key={status}>
+                    <h3 className={statusBadgeClass(status)}>{status.replace("_", " ")}</h3>
+                    {group.map((order) => (
+                      <div
+                        key={order.OrderID}
+                        className="order-card"
+                        data-testid={`order-${order.OrderID}`}
+                      >
+                        <div className="order-card-header">
+                          <strong>Order #{order.OrderID}</strong>
+                          <span className={statusBadgeClass(order.Status)}>{order.Status.replace("_", " ")}</span>
+                        </div>
+                        <p className="muted">
+                          Items: {order.ReadyItemCount}/{order.TotalItemCount} ready
+                          {order.BlockedItemCount > 0 && ` | ${order.BlockedItemCount} blocked`}
+                        </p>
+                        <p className="muted">{formatTime(order.CreatedAt)}</p>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+              {!boardLoading && orders.length === 0 && !boardError && (
+                <p className="muted">No production orders.</p>
+              )}
+            </section>
+          </div>
         ) : (
+          /* Interactive board: full functionality */
           <div className="board-layout">
             <section className="order-list-panel" aria-label="order list" data-testid="order-list">
               <h2>Orders</h2>
@@ -343,17 +591,6 @@ export function App() {
           </div>
         )}
       </main>
-
-      <footer className="service-grid" data-testid="service-config">
-        <div>
-          <strong>users-service</strong>
-          <span>{serviceBaseUrls.usersService}</span>
-        </div>
-        <div>
-          <strong>production-service</strong>
-          <span>{serviceBaseUrls.productionService}</span>
-        </div>
-      </footer>
     </div>
   );
 }

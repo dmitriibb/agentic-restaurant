@@ -4,7 +4,7 @@
 id: task-020-add-staff-client-mode-selection-and-display-session
 title: Add staff-client mode selection and display session
 pipeline: implementation
-status: queued
+status: pr_created
 priority: high
 type: feature
 architecture: not_requested

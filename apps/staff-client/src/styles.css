@@ -310,28 +310,51 @@ input {
   font-weight: 600;
 }
 
-/* ── Footer ── */
+/* ── Landing screen ── */
 
-.service-grid {
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: var(--shadow);
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.landing-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1rem;
+  min-height: 50vh;
+}
+
+.landing-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.landing-btn {
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+  border-radius: 16px;
+}
+
+/* ── Mode chip ── */
+
+.mode-chip {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: #dbe9f8;
+  color: #1a5fa0;
+  letter-spacing: 0.03em;
+}
+
+/* ── Auth form actions ── */
+
+.auth-form-actions {
+  display: flex;
   gap: 0.5rem;
-  padding: 0.85rem 1rem;
-}
-
-.service-grid div {
-  display: grid;
-  gap: 0.15rem;
-}
-
-.service-grid span {
-  font-size: 0.9rem;
-  color: #45483f;
-  word-break: break-all;
+  justify-content: flex-end;
 }
 
 /* ── Responsive ── */
@@ -354,9 +377,5 @@ input {
   .hero {
     border-radius: 16px;
     padding: 1.05rem;
-  }
-
-  .service-grid {
-    grid-template-columns: 1fr;
   }
 }
