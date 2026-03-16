@@ -46,6 +46,20 @@ services:
         limits:
           memory: 512M
 
+  mysql-bootstrap:
+    image: mysql:8.4
+    container_name: restaurant-mysql-bootstrap
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: >
+      sh -c "
+      mysql -hmysql -uroot -proot < /bootstrap/init-databases.sql
+      "
+    volumes:
+      - ./infra/mysql/init-databases.sql:/bootstrap/init-databases.sql:ro
+    restart: "no"
+
   restaurant-rabbitmq:
     image: rabbitmq:4.1-management
     container_name: restaurant-rabbitmq
@@ -90,8 +104,8 @@ services:
       USERS_JWT_EXPIRATION_SECONDS: "3600"
       USERS_INTERNAL_SERVICE_TOKEN: local-dev-token
     depends_on:
-      mysql:
-        condition: service_healthy
+      mysql-bootstrap:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health/readiness || exit 1"]
       interval: 10s
@@ -161,8 +175,8 @@ services:
       APP_AUTH_NAME: orders-service
       APP_AUTH_SECRET: orders-service-secret
     depends_on:
-      mysql:
-        condition: service_healthy
+      mysql-bootstrap:
+        condition: service_completed_successfully
       users-service:
         condition: service_healthy
       menu-service:
@@ -207,8 +221,8 @@ services:
       USERS_SERVICE_URL: http://users-service:8081
       USERS_SERVICE_TOKEN: local-dev-token
     depends_on:
-      mysql:
-        condition: service_healthy
+      mysql-bootstrap:
+        condition: service_completed_successfully
       users-service:
         condition: service_healthy
       restaurant-rabbitmq:
