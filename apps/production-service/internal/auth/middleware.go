@@ -24,7 +24,7 @@ func ClaimsKeyForTest() contextKey {
 	return claimsKey
 }
 
-// RequireStaffRole returns middleware that validates the bearer token and checks for STAFF or MANAGER role.
+// RequireStaffRole returns middleware that validates the bearer token and checks for STAFF, MANAGER, or ADMIN role.
 func RequireStaffRole(client *Client) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,8 +45,8 @@ func RequireStaffRole(client *Client) func(http.Handler) http.Handler {
 				return
 			}
 
-			if !claims.HasRole("STAFF") && !claims.HasRole("MANAGER") {
-				writeError(w, http.StatusForbidden, "insufficient role: STAFF or MANAGER required")
+			if !claims.HasRole("STAFF") && !claims.HasRole("MANAGER") && !claims.HasRole("ADMIN") {
+				writeError(w, http.StatusForbidden, "insufficient role: STAFF, MANAGER, or ADMIN required")
 				return
 			}
 

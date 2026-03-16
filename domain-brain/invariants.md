@@ -31,4 +31,4 @@
 - Order-intake publishers and production consumers must be idempotent.
 - Production work is tracked per quantity unit as `ProductionItem`, not only per submitted order line.
 - Production order status is derived from production item statuses and is not edited directly through a separate order-status command.
-- Staff-facing production endpoints require an authenticated user with role `STAFF` or `MANAGER`.
+- Staff-facing production endpoints require an authenticated user with role `STAFF`, `MANAGER`, or `ADMIN`.

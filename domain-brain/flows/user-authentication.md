@@ -12,7 +12,7 @@ Authenticate registered users, guest users, and application callers, then issue 
 4. `users-service` updates `last_active_at` on successful login.
 5. `users-service` returns a one-hour JWT with user identity and claims.
 6. The client stores the user token and sends it in the `Authorization` header for protected calls.
-7. Downstream services authorize features by role, for example `production-service` allows only `STAFF` and `MANAGER` on staff endpoints.
+7. Downstream services authorize features by role, for example `production-service` allows `STAFF`, `MANAGER`, and `ADMIN` on staff endpoints.
 
 ## Guest Authentication Flow
 

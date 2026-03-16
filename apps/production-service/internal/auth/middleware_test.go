@@ -25,7 +25,7 @@ func mockUsersService(responseJSON string, statusCode int) *httptest.Server {
 }
 
 func TestRequireStaffRole_StaffAllowed(t *testing.T) {
-	server := mockUsersService(`{"valid":true,"userId":1007,"login":"staff1","roles":"STAFF","clientType":"REGISTERED_USER","displayName":"Staff One"}`, 200)
+	server := mockUsersService(`{"valid":true,"userId":1007,"login":"staff1","roles":["STAFF"],"clientType":"REGISTERED_USER","displayName":"Staff One"}`, 200)
 	defer server.Close()
 
 	client := NewClient(server.URL, "test-token")
@@ -61,7 +61,7 @@ func TestRequireStaffRole_StaffAllowed(t *testing.T) {
 }
 
 func TestRequireStaffRole_ManagerAllowed(t *testing.T) {
-	server := mockUsersService(`{"valid":true,"userId":1008,"login":"manager1","roles":"MANAGER","clientType":"REGISTERED_USER","displayName":"Manager One"}`, 200)
+	server := mockUsersService(`{"valid":true,"userId":1008,"login":"manager1","roles":["MANAGER"],"clientType":"REGISTERED_USER","displayName":"Manager One"}`, 200)
 	defer server.Close()
 
 	client := NewClient(server.URL, "test-token")
@@ -75,6 +75,29 @@ func TestRequireStaffRole_ManagerAllowed(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/orders", nil)
 	req.Header.Set("Authorization", "Bearer valid-manager-token")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if !called {
+		t.Error("handler should have been called")
+	}
+}
+
+func TestRequireStaffRole_AdminAllowed(t *testing.T) {
+	server := mockUsersService(`{"valid":true,"userId":1006,"login":"admin","roles":["ADMIN"],"clientType":"REGISTERED_USER","displayName":"admin"}`, 200)
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	middleware := RequireStaffRole(client)
+
+	called := false
+	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/orders", nil)
+	req.Header.Set("Authorization", "Bearer valid-admin-token")
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
@@ -122,7 +145,7 @@ func TestRequireStaffRole_InvalidToken(t *testing.T) {
 }
 
 func TestRequireStaffRole_InsufficientRole(t *testing.T) {
-	server := mockUsersService(`{"valid":true,"userId":1001,"login":"customer1","roles":"CUSTOMER","clientType":"REGISTERED_USER","displayName":"Customer"}`, 200)
+	server := mockUsersService(`{"valid":true,"userId":1001,"login":"customer1","roles":["CUSTOMER"],"clientType":"REGISTERED_USER","displayName":"Customer"}`, 200)
 	defer server.Close()
 
 	client := NewClient(server.URL, "test-token")

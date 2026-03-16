@@ -35,12 +35,12 @@ type validateRequest struct {
 }
 
 type validateResponse struct {
-	Valid       bool   `json:"valid"`
-	UserID      int64  `json:"userId"`
-	Login       string `json:"login"`
-	Roles       string `json:"roles"`
-	ClientType  string `json:"clientType"`
-	DisplayName string `json:"displayName"`
+	Valid       bool            `json:"valid"`
+	UserID      int64           `json:"userId"`
+	Login       string          `json:"login"`
+	Roles       json.RawMessage `json:"roles"`
+	ClientType  string          `json:"clientType"`
+	DisplayName string          `json:"displayName"`
 }
 
 // Client validates bearer tokens through the users-service internal API.
@@ -101,9 +101,9 @@ func (c *Client) ValidateToken(ctx context.Context, bearerToken string) (*UserCl
 		return nil, nil
 	}
 
-	roles := strings.Split(vResp.Roles, ",")
-	for i := range roles {
-		roles[i] = strings.TrimSpace(roles[i])
+	roles, err := parseRoles(vResp.Roles)
+	if err != nil {
+		return nil, fmt.Errorf("parse roles: %w", err)
 	}
 
 	return &UserClaims{
@@ -113,4 +113,36 @@ func (c *Client) ValidateToken(ctx context.Context, bearerToken string) (*UserCl
 		ClientType:  vResp.ClientType,
 		DisplayName: vResp.DisplayName,
 	}, nil
+}
+
+func parseRoles(raw json.RawMessage) ([]string, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return []string{}, nil
+	}
+
+	var rolesList []string
+	if err := json.Unmarshal(raw, &rolesList); err == nil {
+		return normalizeRoles(rolesList), nil
+	}
+
+	var rolesString string
+	if err := json.Unmarshal(raw, &rolesString); err == nil {
+		if rolesString == "" {
+			return []string{}, nil
+		}
+		return normalizeRoles(strings.Split(rolesString, ",")), nil
+	}
+
+	return nil, fmt.Errorf("unsupported roles format: %s", string(raw))
+}
+
+func normalizeRoles(roles []string) []string {
+	result := make([]string, 0, len(roles))
+	for _, role := range roles {
+		trimmed := strings.TrimSpace(role)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }
