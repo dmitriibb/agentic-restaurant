@@ -52,7 +52,7 @@ class JdbcUserRepository(
             """SELECT $SELECT_COLUMNS FROM users
                WHERE application_id = ?
                  AND client_type = 'APPLICATION'
-                 AND (last_active_at IS NULL OR last_active_at < DATE_SUB(NOW(), INTERVAL ? MINUTE))
+                                 AND (last_active_at IS NULL OR last_active_at < TIMESTAMPADD(MINUTE, -?, CURRENT_TIMESTAMP))
                ORDER BY last_active_at ASC
                LIMIT 1
                FOR UPDATE""",
@@ -85,7 +85,11 @@ class JdbcUserRepository(
             if (user.applicationId != null) ps.setLong(7, user.applicationId) else ps.setNull(7, java.sql.Types.BIGINT)
             ps
         }, keyHolder)
-        val generatedId = keyHolder.key?.toLong() ?: throw IllegalStateException("Failed to get generated key for user")
+        val generatedId = when {
+            keyHolder.key != null -> keyHolder.key!!.toLong()
+            keyHolder.keys?.containsKey("id") == true -> (keyHolder.keys!!["id"] as Number).toLong()
+            else -> throw IllegalStateException("Failed to get generated key for user")
+        }
         return findById(generatedId) ?: throw IllegalStateException("Failed to find created user with id $generatedId")
     }
 
@@ -102,7 +106,7 @@ class JdbcUserRepository(
                SET status = 'DISABLED'
                WHERE client_type = 'GUEST_USER'
                  AND status = 'ACTIVE'
-                 AND created_at < DATE_SUB(NOW(), INTERVAL ? DAY)""",
+                 AND created_at < TIMESTAMPADD(DAY, -?, CURRENT_TIMESTAMP)""",
             retentionDays,
         )
 }

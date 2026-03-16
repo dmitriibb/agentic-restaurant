@@ -4,12 +4,12 @@
 id: task-019-add-display-mode-auth-and-board-summary-api
 title: Add display-mode auth and board summary API
 pipeline: implementation
-status: queued
+status: implementing
 priority: high
 type: feature
 architecture: not_requested
 source_architecture: task-017-redesign-ui-entry-modes-and-production-board
-retry_count: 0
+retry_count: 1
 created_at: 2026-03-16
 requested_by: human
 areas:

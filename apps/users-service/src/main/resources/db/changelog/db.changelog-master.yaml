@@ -13,3 +13,5 @@ databaseChangeLog:
       file: db/changelog/changes/006-cleanup-demo-seed-users.yaml
   - include:
       file: db/changelog/changes/007-seed-staff-users-and-production-app.yaml
+  - include:
+      file: db/changelog/changes/008-seed-staff-client-display-app.yaml

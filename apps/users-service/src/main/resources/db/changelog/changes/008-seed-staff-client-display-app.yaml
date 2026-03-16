@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-seed-staff-client-display-app
+      author: codex
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: "SELECT COUNT(*) FROM applications WHERE application_name = 'staff-client-display'"
+      changes:
+        - insert:
+            tableName: applications
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 5
+              - column:
+                  name: application_name
+                  value: staff-client-display
+              - column:
+                  name: secret_hash
+                  value: "pbkdf2$120000$AQIDBAUGBwgJCgsMDQ4PEA==$kMR7Q/o2g/5Bzb+g1GSxjSnwjRL1t2HdVNlaDJtirfA="
+              - column:
+                  name: max_pool_size
+                  valueNumeric: 30
+              - column:
+                  name: status
+                  value: ACTIVE

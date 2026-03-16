@@ -11,12 +11,13 @@ Turn an accepted order into executable kitchen work, track each production item 
 3. An outbox publisher sends `production.item.requested.v1` messages to RabbitMQ.
 4. `production-service` consumes each message idempotently and creates production items in `QUEUED` state.
 5. `production-service` derives the production order status from the current item states.
-6. `staff-client` interactive mode loads the production board from `production-service`, grouped by derived order status columns.
-7. `staff-client` display mode may load a read-only display-board projection for customer-facing screens.
+6. `staff-client` interactive mode loads the production board from `production-service` via `GET /api/v1/production/orders`, grouped by derived order status columns.
+7. `staff-client` display mode loads a read-only display-board projection from `GET /api/v1/production/display/orders` for customer-facing screens.
 8. Each order card stays in exactly one status column and summarizes item counts with concise icons such as `⏳`, `🍳`, `⚠️`, and `✅`.
-9. Interactive staff members can open order details and mark individual items as picked up (`IN_PROGRESS`), blocked, resumed, or ready.
-10. `production-service` publishes item status change events after successful transitions.
-11. When all active items are `READY`, `production-service` marks the production order `READY` and publishes `production.order.ready.v1`.
+9. Board summaries include per-order `itemStatusCounts` for `QUEUED`, `IN_PROGRESS`, `BLOCKED`, and `READY`, plus a total active item count.
+10. Interactive staff members can open order details and mark individual items as picked up (`IN_PROGRESS`), blocked, resumed, or ready.
+11. `production-service` publishes item status change events after successful transitions.
+12. When all active items are `READY`, `production-service` marks the production order `READY` and publishes `production.order.ready.v1`.
 
 ## Status Enums
 

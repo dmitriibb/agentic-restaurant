@@ -27,9 +27,9 @@ Authenticate registered users, guest users, display-screen application callers, 
 
 1. `staff-client` shows a landing screen with `Interactive` and `Display`.
 2. When the operator chooses `Display`, the client does not ask for username or password.
-3. `staff-client` acquires an application token via `POST /api/v1/auth/applications/token` using the configured display credentials.
+3. `staff-client` acquires an application token via `POST /api/v1/auth/applications/token` using the dedicated `staff-client-display` application credential.
 4. The client stores `mode = display` in UI session state and loads the read-only production board.
-5. `production-service` authorizes that application token only for display-board endpoints; item-mutation endpoints remain unavailable.
+5. `production-service` authorizes that application token only for `GET /api/v1/production/display/orders`; interactive detail and item-mutation endpoints remain unavailable.
 
 ## Application Authentication Flow
 

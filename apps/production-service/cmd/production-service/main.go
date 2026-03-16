@@ -96,9 +96,10 @@ func main() {
 
 	// Create auth client and API handlers
 	authClient := auth.NewClient(cfg.UsersServiceURL, cfg.UsersServiceToken)
-	authMiddleware := auth.RequireStaffRole(authClient)
+	staffAuthMiddleware := auth.RequireStaffRole(authClient)
+	applicationAuthMiddleware := auth.RequireApplicationClient(authClient)
 	apiHandlers := api.NewHandlers(productionStore, logger)
-	apiHandlers.Register(mux, authMiddleware)
+	apiHandlers.Register(mux, staffAuthMiddleware, applicationAuthMiddleware)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),

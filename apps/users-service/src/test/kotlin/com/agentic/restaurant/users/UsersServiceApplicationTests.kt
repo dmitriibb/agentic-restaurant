@@ -52,13 +52,13 @@ class UsersServiceApplicationTests {
             "SELECT COUNT(*) FROM users",
             java.lang.Integer::class.java,
         )
-        assertThat(usersCount).isEqualTo(1)
+        assertThat(usersCount).isEqualTo(3)
 
         val applicationsCount = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM applications",
             java.lang.Integer::class.java,
         )
-        assertThat(applicationsCount).isEqualTo(3)
+        assertThat(applicationsCount).isEqualTo(5)
     }
 
     @Test
@@ -105,12 +105,32 @@ class UsersServiceApplicationTests {
         val apps = jdbcTemplate.queryForList(
             "SELECT application_name, status, max_pool_size FROM applications ORDER BY id",
         )
-        assertThat(apps).hasSize(3)
+        assertThat(apps).hasSize(5)
         assertThat(apps[0]["application_name"]).isEqualTo("orders-client")
         assertThat(apps[0]["status"]).isEqualTo("ACTIVE")
         assertThat(apps[0]["max_pool_size"]).isEqualTo(30)
         assertThat(apps[1]["application_name"]).isEqualTo("menu-service")
         assertThat(apps[2]["application_name"]).isEqualTo("orders-service")
+        assertThat(apps[3]["application_name"]).isEqualTo("production-service")
+        assertThat(apps[4]["application_name"]).isEqualTo("staff-client-display")
+    }
+
+    @Test
+    fun `application token endpoint issues token for staff display application`() {
+        val request = mapOf(
+            "applicationName" to "staff-client-display",
+            "applicationSecret" to "staff-client-display-secret",
+        )
+
+        val response = restTemplate.postForEntity("/api/v1/auth/applications/token", request, Map::class.java)
+
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response.body?.get("accessToken")).isInstanceOf(String::class.java)
+        assertThat(response.body?.get("expiresInSeconds")).isEqualTo(3600)
+
+        @Suppress("UNCHECKED_CAST")
+        val user = response.body?.get("user") as Map<String, Any>
+        assertThat(user["clientType"]).isEqualTo("APPLICATION")
     }
 
     @Test
@@ -287,7 +307,7 @@ class UsersServiceApplicationTests {
     fun `guest archival disables guests older than retention period`() {
         // Insert an old guest (created 10 days ago)
         jdbcTemplate.update(
-            "INSERT INTO users (login, password_hash, status, roles, client_type, display_name, created_at) VALUES (?, NULL, 'ACTIVE', 'CUSTOMER', 'GUEST_USER', ?, DATE_SUB(NOW(), INTERVAL 10 DAY))",
+            "INSERT INTO users (login, password_hash, status, roles, client_type, display_name, created_at) VALUES (?, NULL, 'ACTIVE', 'CUSTOMER', 'GUEST_USER', ?, TIMESTAMPADD(DAY, -10, CURRENT_TIMESTAMP))",
             "test-old-guest",
             "Old Guest",
         )

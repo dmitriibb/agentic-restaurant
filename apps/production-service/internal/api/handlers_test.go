@@ -15,6 +15,8 @@ import (
 	"agentic/restaurant/production-service/internal/logging"
 )
 
+func passthroughAuth(next http.Handler) http.Handler { return next }
+
 // mockStore implements ProductionStore for testing.
 type mockStore struct {
 	orders []domain.ProductionOrder
@@ -134,7 +136,7 @@ func TestListOrders(t *testing.T) {
 	}
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/orders", nil)
 	rec := httptest.NewRecorder()
@@ -144,12 +146,19 @@ func TestListOrders(t *testing.T) {
 		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	var orders []domain.ProductionOrder
+	var orders []map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &orders); err != nil {
 		t.Fatalf("failed to unmarshal: %v", err)
 	}
 	if len(orders) != 2 {
 		t.Errorf("expected 2 orders, got %d", len(orders))
+	}
+	firstCounts, ok := orders[0]["ItemStatusCounts"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected ItemStatusCounts in summary")
+	}
+	if firstCounts["Queued"] == nil || firstCounts["InProgress"] == nil || firstCounts["Blocked"] == nil || firstCounts["Ready"] == nil {
+		t.Fatalf("expected complete ItemStatusCounts payload, got %#v", firstCounts)
 	}
 }
 
@@ -162,7 +171,7 @@ func TestListOrdersFilterByStatus(t *testing.T) {
 	}
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/orders?status=QUEUED", nil)
 	rec := httptest.NewRecorder()
@@ -172,7 +181,7 @@ func TestListOrdersFilterByStatus(t *testing.T) {
 		t.Fatalf("expected 200, got %d", rec.Code)
 	}
 
-	var orders []domain.ProductionOrder
+	var orders []map[string]any
 	json.Unmarshal(rec.Body.Bytes(), &orders)
 	if len(orders) != 1 {
 		t.Errorf("expected 1 order, got %d", len(orders))
@@ -190,7 +199,7 @@ func TestGetOrder(t *testing.T) {
 	}
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/orders/100", nil)
 	rec := httptest.NewRecorder()
@@ -205,7 +214,7 @@ func TestGetOrderNotFound(t *testing.T) {
 	store := &mockStore{}
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/orders/999", nil)
 	rec := httptest.NewRecorder()
@@ -235,7 +244,7 @@ func TestPickupSuccess(t *testing.T) {
 	}
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	body := `{}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/production/items/item-1/pickup", strings.NewReader(body))
@@ -268,7 +277,7 @@ func TestPickupInvalidTransition(t *testing.T) {
 	}
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/production/items/item-1/pickup", nil)
 	req = withClaims(req, &auth.UserClaims{UserID: 1007, Login: "staff1", Roles: []string{"STAFF"}, DisplayName: "Staff One"})
@@ -286,7 +295,7 @@ func TestCommandItemNotFound(t *testing.T) {
 	}
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/production/items/nonexistent/pickup", nil)
 	req = withClaims(req, &auth.UserClaims{UserID: 1007, Login: "staff1", Roles: []string{"STAFF"}, DisplayName: "Staff One"})
@@ -311,7 +320,7 @@ func TestCommandNoAuth(t *testing.T) {
 
 	authClient := auth.NewClient(mockServer.URL, "test-token")
 	authMw := auth.RequireStaffRole(authClient)
-	h.Register(mux, authMw)
+	h.Register(mux, authMw, passthroughAuth)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/production/items/item-1/pickup", nil)
 	req.Header.Set("Authorization", "Bearer bad-token")
@@ -337,7 +346,7 @@ func TestVersionConflict(t *testing.T) {
 	}
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	body := `{"expectedVersion": 1}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/production/items/item-1/pickup", strings.NewReader(body))
@@ -370,7 +379,7 @@ func TestBlockWithReason(t *testing.T) {
 	}
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	body := `{"reason": "ingredient missing"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/production/items/item-1/block", strings.NewReader(body))
@@ -400,7 +409,7 @@ func TestReadyCommandDerivesOrderReadyAndWritesOutboxEvents(t *testing.T) {
 		updateItemResult: true,
 		countItemsResult: domain.ItemStatusCounts{Ready: 1},
 		getOrderInTxResult: &domain.ProductionOrder{
-			OrderID:          100,
+			OrderID:           100,
 			ExternalRequestID: "req-100",
 			TotalItemCount:    1,
 		},
@@ -408,7 +417,7 @@ func TestReadyCommandDerivesOrderReadyAndWritesOutboxEvents(t *testing.T) {
 
 	h := NewHandlers(store, logging.New())
 	mux := http.NewServeMux()
-	h.Register(mux, func(next http.Handler) http.Handler { return next })
+	h.Register(mux, passthroughAuth, passthroughAuth)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/production/items/item-1/ready", strings.NewReader(`{}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -442,4 +451,119 @@ func containsString(items []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func TestListDisplayOrdersOmitsUserDisplayNameAndIncludesCounts(t *testing.T) {
+	store := &mockStore{
+		orders: []domain.ProductionOrder{
+			{OrderID: 101, Status: domain.StatusInProgress, CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		},
+		items: []domain.ProductionItem{
+			{ID: "i1", OrderID: 101, Status: domain.StatusQueued},
+			{ID: "i2", OrderID: 101, Status: domain.StatusInProgress},
+			{ID: "i3", OrderID: 101, Status: domain.StatusBlocked},
+			{ID: "i4", OrderID: 101, Status: domain.StatusReady},
+		},
+	}
+	h := NewHandlers(store, logging.New())
+	mux := http.NewServeMux()
+	h.Register(mux, passthroughAuth, passthroughAuth)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/display/orders", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var payload []map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+	if len(payload) != 1 {
+		t.Fatalf("expected 1 summary, got %d", len(payload))
+	}
+	if _, exists := payload[0]["UserDisplayName"]; exists {
+		t.Fatal("display summary should not include UserDisplayName")
+	}
+	counts, ok := payload[0]["ItemStatusCounts"].(map[string]any)
+	if !ok {
+		t.Fatal("expected ItemStatusCounts object")
+	}
+	if counts["Queued"] != float64(1) || counts["InProgress"] != float64(1) || counts["Blocked"] != float64(1) || counts["Ready"] != float64(1) {
+		t.Fatalf("unexpected counts payload: %#v", counts)
+	}
+	if payload[0]["TotalItemCount"] != float64(4) {
+		t.Fatalf("expected TotalItemCount=4, got %v", payload[0]["TotalItemCount"])
+	}
+}
+
+func TestApplicationTokenCannotCallMutationEndpoint(t *testing.T) {
+	store := &mockStore{}
+	h := NewHandlers(store, logging.New())
+	mux := http.NewServeMux()
+
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := new(struct {
+			Token string `json:"token"`
+		})
+		_ = json.NewDecoder(r.Body).Decode(body)
+		w.WriteHeader(http.StatusOK)
+		if body.Token == "app-token" {
+			fmt.Fprint(w, `{"valid":true,"userId":2001,"login":"app-staff-client-display-1","roles":["SERVICE"],"clientType":"APPLICATION","displayName":""}`)
+			return
+		}
+		fmt.Fprint(w, `{"valid":false}`)
+	}))
+	defer mockServer.Close()
+
+	authClient := auth.NewClient(mockServer.URL, "test-token")
+	staffAuth := auth.RequireStaffRole(authClient)
+	appAuth := auth.RequireApplicationClient(authClient)
+	h.Register(mux, staffAuth, appAuth)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/production/items/item-1/pickup", strings.NewReader(`{}`))
+	req.Header.Set("Authorization", "Bearer app-token")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 for application token on mutation endpoint, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestApplicationTokenCanCallDisplayEndpoint(t *testing.T) {
+	store := &mockStore{orders: []domain.ProductionOrder{{OrderID: 111, Status: domain.StatusQueued, CreatedAt: time.Now(), UpdatedAt: time.Now()}}}
+	h := NewHandlers(store, logging.New())
+	mux := http.NewServeMux()
+
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := new(struct {
+			Token string `json:"token"`
+		})
+		_ = json.NewDecoder(r.Body).Decode(body)
+		w.WriteHeader(http.StatusOK)
+		if body.Token == "app-token" {
+			fmt.Fprint(w, `{"valid":true,"userId":2001,"login":"app-staff-client-display-1","roles":["SERVICE"],"clientType":"APPLICATION","displayName":""}`)
+			return
+		}
+		fmt.Fprint(w, `{"valid":false}`)
+	}))
+	defer mockServer.Close()
+
+	authClient := auth.NewClient(mockServer.URL, "test-token")
+	staffAuth := auth.RequireStaffRole(authClient)
+	appAuth := auth.RequireApplicationClient(authClient)
+	h.Register(mux, staffAuth, appAuth)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/display/orders", nil)
+	req.Header.Set("Authorization", "Bearer app-token")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 for application token on display endpoint, got %d: %s", rec.Code, rec.Body.String())
+	}
 }

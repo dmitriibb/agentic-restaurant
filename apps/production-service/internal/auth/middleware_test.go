@@ -171,3 +171,50 @@ func TestClaimsFromContext_NoClaims(t *testing.T) {
 		t.Error("expected nil claims from empty context")
 	}
 }
+
+func TestRequireApplicationClient_ApplicationAllowed(t *testing.T) {
+	server := mockUsersService(`{"valid":true,"userId":2001,"login":"app-staff-client-display-1","roles":["SERVICE"],"clientType":"APPLICATION","displayName":""}`, 200)
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	middleware := RequireApplicationClient(client)
+
+	called := false
+	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/display/orders", nil)
+	req.Header.Set("Authorization", "Bearer valid-app-token")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if !called {
+		t.Error("handler should have been called")
+	}
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rec.Code)
+	}
+}
+
+func TestRequireApplicationClient_RegisteredUserForbidden(t *testing.T) {
+	server := mockUsersService(`{"valid":true,"userId":1007,"login":"staff1","roles":["STAFF"],"clientType":"REGISTERED_USER","displayName":"Staff One"}`, 200)
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	middleware := RequireApplicationClient(client)
+
+	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("handler should not be called")
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/production/display/orders", nil)
+	req.Header.Set("Authorization", "Bearer staff-token")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", rec.Code)
+	}
+}
