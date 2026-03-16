@@ -21,6 +21,10 @@
 - Guest users are archived (set to DISABLED) after retention window (default 7 days, configurable).
 - `password_hash` may be null only for `GUEST_USER` and `APPLICATION` users.
 - `X-Service-Token` is retained only for `/api/v1/internal/auth/validate`; other inter-service auth uses bearer JWT.
+- The main UI surface in `orders-client` and `staff-client` remains hidden until a valid mode and session are established.
+- `orders-client` persists an explicit UI mode of `registered` or `guest` for feature gating.
+- `staff-client` persists an explicit UI mode of `interactive` or `display`; only `interactive` may issue production commands.
+- Customer-facing display mode must not expose production mutation controls or detailed order internals.
 - An order submission must contain at least one line.
 - Every order line quantity must be greater than zero.
 - `userId` in an order request must match the authenticated token subject.

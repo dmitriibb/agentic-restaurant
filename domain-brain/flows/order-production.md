@@ -2,7 +2,7 @@
 
 ## Goal
 
-Turn an accepted order into executable kitchen work, track each production item independently, and mark the order `READY` when all active items are ready.
+Turn an accepted order into executable kitchen work, track each production item independently, present that work clearly in staff-facing status columns, and mark the order `READY` when all active items are ready.
 
 ## Steps
 
@@ -11,10 +11,12 @@ Turn an accepted order into executable kitchen work, track each production item 
 3. An outbox publisher sends `production.item.requested.v1` messages to RabbitMQ.
 4. `production-service` consumes each message idempotently and creates production items in `QUEUED` state.
 5. `production-service` derives the production order status from the current item states.
-6. `staff-client` loads the production board from `production-service`.
-7. Staff members mark individual items as picked up (`IN_PROGRESS`), blocked, resumed, or ready.
-8. `production-service` publishes item status change events after successful transitions.
-9. When all active items are `READY`, `production-service` marks the production order `READY` and publishes `production.order.ready.v1`.
+6. `staff-client` interactive mode loads the production board from `production-service`, grouped by derived order status columns.
+7. `staff-client` display mode may load a read-only display-board projection for customer-facing screens.
+8. Each order card stays in exactly one status column and summarizes item counts with concise icons such as `⏳`, `🍳`, `⚠️`, and `✅`.
+9. Interactive staff members can open order details and mark individual items as picked up (`IN_PROGRESS`), blocked, resumed, or ready.
+10. `production-service` publishes item status change events after successful transitions.
+11. When all active items are `READY`, `production-service` marks the production order `READY` and publishes `production.order.ready.v1`.
 
 ## Status Enums
 
@@ -40,6 +42,8 @@ Turn an accepted order into executable kitchen work, track each production item 
 - Order intake and financial snapshots remain owned by `orders-service`.
 - Production items are tracked per quantity unit, not only per order line.
 - Order production status is derived from item statuses and is never manually edited directly.
+- An order is displayed in the column matching its derived order status even when its items span multiple item statuses.
+- Display mode is read-only and must not expose production mutation controls or detailed internal problem notes.
 - Staff mutations must be authenticated and authorized.
 - RabbitMQ delivery is treated as at-least-once; consumers must be idempotent.
 
@@ -51,3 +55,4 @@ Turn an accepted order into executable kitchen work, track each production item 
 - RabbitMQ is temporarily unavailable after order acceptance
 - `production-service` is unavailable while events are queued
 - a blocked item prevents the order from becoming `READY`
+- a customer-facing display screen loads only summary data and cannot open internal order detail

@@ -12,6 +12,12 @@
 - Scenario: Guest token expires while a terminal session is still active.
   Expected handling: protected requests fail and terminal returns to guest entry/login path.
 
+- Scenario: Staff display mode cannot acquire an application token.
+  Expected handling: the board does not load and the app remains on the display entry/loading state with a clear retry path.
+
+- Scenario: Browser reload happens during an active orders or staff session.
+  Expected handling: the client restores the remembered UI mode, restores human sessions from session storage when valid, and reacquires application tokens for app-backed modes instead of storing them in browser storage.
+
 - Scenario: Legacy token without `clientType` claim is validated.
   Expected handling: validation treats caller as `REGISTERED_USER` for backward compatibility.
 
@@ -50,6 +56,9 @@
 
 - Scenario: One production item becomes `BLOCKED` while others are already `READY`.
   Expected handling: the production order remains not-ready and surfaces `BLOCKED` until the issue is resolved or the item is cancelled.
+
+- Scenario: One order has queued, in-progress, and ready items at the same time.
+  Expected handling: the order stays in the lane matching the derived order status while the card shows per-item counts with status icons.
 
 - Scenario: Staff client reconnects after losing network connectivity.
   Expected handling: the client reloads the current board snapshot from `production-service` and then resumes its live update stream.

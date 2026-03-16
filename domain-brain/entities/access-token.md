@@ -23,6 +23,6 @@ A JWT issued by `users-service` that authenticates a user for protected API call
 
 - Lifetime varies by client type: 1 hour for registered and application users, 24 hours for guest users.
 - Guest token expiration is configurable (`app.security.guest-token-expiration-seconds`).
-- Application tokens are used by backend services and the guest-creation path in `orders-client`.
+- Application tokens are used by backend services, the guest-creation path in `orders-client`, and the read-only display mode in `staff-client`.
 - Backward compatibility: tokens without a `clientType` claim are treated as `REGISTERED_USER` during validation.
 - Staff production access is authorized by roles in the token claims, with `STAFF`, `MANAGER`, and `ADMIN` allowed.

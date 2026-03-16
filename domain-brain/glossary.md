@@ -24,6 +24,10 @@ A token/user classification enum with values `REGISTERED_USER`, `GUEST_USER`, an
 
 A human-readable name associated with a user, especially guest users, shown in order flows.
 
+## Display Mode
+
+A passwordless, application-authenticated `staff-client` session that renders a read-only production board for customer-facing screens.
+
 ## GuestUser
 
 A walk-in customer account created on demand with a display name and no password.
@@ -52,6 +56,10 @@ The operational aggregate for an accepted order inside `production-service`.
 
 The lifecycle enum used by `production-service` for production orders and production items.
 
+## Session Mode
+
+Frontend-owned UI state that records whether the current experience is `registered`, `guest`, `interactive`, or `display`.
+
 ## RequestId
 
 A client-generated identifier used in `PUT` order creation to make retries idempotent.
@@ -59,6 +67,10 @@ A client-generated identifier used in `PUT` order creation to make retries idemp
 ## Staff Board
 
 The web interface used by restaurant staff to view queued work and update production item status.
+
+## Interactive Mode
+
+A `staff-client` session backed by a registered staff user token that can open order details and issue production commands.
 
 ## UserAccount
 
