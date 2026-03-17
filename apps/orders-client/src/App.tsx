@@ -172,55 +172,44 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Restaurant Platform</p>
-          <h1>Orders Client</h1>
-          <p className="subtitle">Choose a mode, authenticate, then browse menu and submit orders.</p>
+      {isAuthenticated ? (
+        <div className="app-toolbar">
+          <p className="mode-chip" data-testid="mode-chip">
+            Mode: {formatMode(mode)}
+          </p>
+          <button className="action" type="button" onClick={reloadMenu} disabled={menuLoading}>
+            Reload Menu
+          </button>
+          <button className="action ghost" type="button" onClick={logout}>
+            Logout
+          </button>
         </div>
-        <div className="hero-actions">
-          {isAuthenticated ? (
-            <>
-              <p className="mode-chip" data-testid="mode-chip">
-                Mode: {formatMode(mode)}
-              </p>
-              <button className="action" type="button" onClick={reloadMenu} disabled={menuLoading}>
-                Reload Menu
-              </button>
-              <button className="action ghost" type="button" onClick={logout}>
-                Logout
-              </button>
-            </>
-          ) : null}
-        </div>
-      </header>
+      ) : null}
 
       {!isAuthenticated ? (
         <main className="entry-shell" aria-label="authentication" data-testid="auth-gate">
           {entryStep === "landing" ? (
-            <section className="surface-card entry-card">
-              <h2>Choose How You Want to Continue</h2>
-              <p className="muted">Pick a mode before the menu and basket workspace is shown.</p>
-              <div className="hero-actions">
+            <section className="entry-card" aria-label="mode selection">
+              <div className="mode-choice-grid">
                 <button
-                  className="action"
+                  className="mode-choice mode-choice-primary"
                   type="button"
                   onClick={() => {
                     setEntryStep("registered_credentials");
                     setAuthError(null);
                   }}
                 >
-                  Login as Registered
+                  <span className="mode-choice-title">Registered User</span>
                 </button>
                 <button
-                  className="action ghost"
+                  className="mode-choice mode-choice-secondary"
                   type="button"
                   onClick={() => {
                     setEntryStep("guest_name");
                     setAuthError(null);
                   }}
                 >
-                  Login as Guest
+                  <span className="mode-choice-title">Guest</span>
                 </button>
               </div>
             </section>

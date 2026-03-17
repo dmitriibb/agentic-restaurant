@@ -33,29 +33,12 @@ body {
   gap: 1.2rem;
 }
 
-.hero {
-  border: 1px solid var(--line);
-  background: linear-gradient(155deg, #fff6d5 0%, #f5edcf 100%);
-  box-shadow: var(--shadow);
-  border-radius: 22px;
-  padding: 1.5rem;
+.app-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
+  align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-}
-
-.eyebrow {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.72rem;
-  color: #6a674d;
-}
-
-h1 {
-  margin: 0.35rem 0 0.15rem;
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
 }
 
 h2 {
@@ -64,11 +47,6 @@ h2 {
 
 h3 {
   margin: 0 0 0.5rem;
-}
-
-.subtitle {
-  margin: 0;
-  max-width: 62ch;
 }
 
 .hero-actions {
@@ -360,21 +338,41 @@ input {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 1rem;
-  min-height: 50vh;
+  min-height: calc(100vh - 4.5rem);
 }
 
 .landing-actions {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  width: min(760px, 100%);
 }
 
-.landing-btn {
-  padding: 1rem 2.5rem;
-  font-size: 1.1rem;
-  border-radius: 16px;
+.landing-mode-card {
+  min-height: 220px;
+  border-radius: 34px;
+  border: 3px solid #102f28;
+  background: linear-gradient(180deg, #fff8dd 0%, #f5edcf 100%);
+  color: var(--text);
+  padding: 1.6rem;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.8rem;
+  text-align: center;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.landing-mode-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 32px -24px rgba(47, 43, 26, 0.55);
+}
+
+.landing-mode-title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
 }
 
 /* ── Mode chip ── */
@@ -430,8 +428,11 @@ input {
     padding-inline: 0.9rem;
   }
 
-  .hero {
-    border-radius: 16px;
-    padding: 1.05rem;
+  .landing-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-mode-card {
+    min-height: 180px;
   }
 }

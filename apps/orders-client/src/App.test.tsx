@@ -18,8 +18,8 @@ describe("Orders client flows", () => {
 
     render(<App />);
 
-    expect(screen.getByRole("button", { name: "Login as Registered" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Login as Guest" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Registered User/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Guest\b/i })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Menu" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Basket + Checkout" })).not.toBeInTheDocument();
   });
@@ -57,7 +57,7 @@ describe("Orders client flows", () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Login as Registered" }));
+    fireEvent.click(screen.getByRole("button", { name: /Registered User/i }));
     fireEvent.change(screen.getByLabelText("Login"), { target: { value: "demo-user" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secret" } });
     fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
@@ -118,7 +118,7 @@ describe("Orders client flows", () => {
     render(<App />);
 
     expect(vi.mocked(getAppToken)).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Login as Guest" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Guest\b/i }));
     expect(vi.mocked(getAppToken)).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText("Display Name"), { target: { value: "Walk In" } });

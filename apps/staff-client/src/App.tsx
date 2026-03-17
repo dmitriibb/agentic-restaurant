@@ -343,33 +343,24 @@ export function App() {
   if (view === "landing") {
     return (
       <div className="app-shell">
-        <header className="hero">
-          <div>
-            <p className="eyebrow">Restaurant Platform</p>
-            <h1>Staff Client</h1>
-            <p className="subtitle">Production Board</p>
-          </div>
-        </header>
         <main>
           <section className="landing-screen" aria-label="mode selection" data-testid="mode-selection">
-            <h2>Staff Client</h2>
-            <p>Select a mode to continue</p>
             <div className="landing-actions">
               <button
-                className="action landing-btn"
+                className="landing-mode-card"
                 type="button"
                 onClick={() => setView("interactive_credentials")}
                 data-testid="mode-interactive"
               >
-                Interactive
+                <span className="landing-mode-title">Interactive</span>
               </button>
               <button
-                className="action landing-btn"
+                className="landing-mode-card"
                 type="button"
                 onClick={() => void enterDisplayMode()}
                 data-testid="mode-display"
               >
-                Display
+                <span className="landing-mode-title">Display</span>
               </button>
             </div>
           </section>
@@ -382,13 +373,6 @@ export function App() {
   if (view === "interactive_credentials") {
     return (
       <div className="app-shell">
-        <header className="hero">
-          <div>
-            <p className="eyebrow">Restaurant Platform</p>
-            <h1>Staff Client</h1>
-            <p className="subtitle">Production Board</p>
-          </div>
-        </header>
         <main>
           <section className="surface-card auth-section" aria-label="authentication">
             <h2>Staff Sign In</h2>
@@ -430,13 +414,6 @@ export function App() {
   if (view === "display_loading") {
     return (
       <div className="app-shell">
-        <header className="hero">
-          <div>
-            <p className="eyebrow">Restaurant Platform</p>
-            <h1>Staff Client</h1>
-            <p className="subtitle">Production Board</p>
-          </div>
-        </header>
         <main>
           <section className="landing-screen" aria-label="display loading" data-testid="display-loading">
             <p>Connecting display mode...</p>
@@ -459,42 +436,35 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Restaurant Platform</p>
-          <h1>Staff Client</h1>
-          <p className="subtitle">Production Board</p>
-        </div>
-        <div className="hero-actions">
-          {session && (
-            <span className="mode-chip" data-testid="mode-chip">
-              Mode: {session.mode}
-            </span>
-          )}
-          {!isDisplay && session?.user && (
-            <span className="auth-info" data-testid="auth-status">
-              Signed in as <strong>{displayUserName(session.user)}</strong>
-            </span>
-          )}
-          <button
-            className="action"
-            type="button"
-            onClick={() => session && void loadBoard(session.accessToken, session.mode as "interactive" | "display")}
-            disabled={boardLoading}
-          >
-            Refresh
+      <div className="app-toolbar">
+        {session && (
+          <span className="mode-chip" data-testid="mode-chip">
+            Mode: {session.mode}
+          </span>
+        )}
+        {!isDisplay && session?.user && (
+          <span className="auth-info" data-testid="auth-status">
+            Signed in as <strong>{displayUserName(session.user)}</strong>
+          </span>
+        )}
+        <button
+          className="action"
+          type="button"
+          onClick={() => session && void loadBoard(session.accessToken, session.mode as "interactive" | "display")}
+          disabled={boardLoading}
+        >
+          Refresh
+        </button>
+        {!isDisplay ? (
+          <button className="action ghost" type="button" onClick={resetAllState}>
+            Logout
           </button>
-          {!isDisplay ? (
-            <button className="action ghost" type="button" onClick={resetAllState}>
-              Logout
-            </button>
-          ) : (
-            <button className="action ghost" type="button" onClick={resetAllState}>
-              Exit
-            </button>
-          )}
-        </div>
-      </header>
+        ) : (
+          <button className="action ghost" type="button" onClick={resetAllState}>
+            Exit
+          </button>
+        )}
+      </div>
 
       <main>
         {boardLoading && !hasOrders && <p className="muted">Loading orders...</p>}
@@ -592,7 +562,7 @@ export function App() {
                               {item.Status.replace("_", " ")}
                             </span>
                             {item.ClaimedByDisplayName && (
-                              <span className="muted">Claimed by: {item.ClaimedByDisplayName}</span>
+                              <span className="muted">Picked by: {item.ClaimedByDisplayName}</span>
                             )}
                             {item.BlockedReason && (
                               <span className="muted blocked-reason">Reason: {item.BlockedReason}</span>
