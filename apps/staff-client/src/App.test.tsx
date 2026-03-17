@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
@@ -36,12 +36,20 @@ const SAMPLE_ORDER = {
   UserDisplayName: "Demo User",
   Status: "QUEUED",
   TotalItemCount: 2,
-  ReadyItemCount: 0,
-  BlockedItemCount: 0,
+  ItemStatusCounts: { Queued: 2, InProgress: 0, Blocked: 0, Ready: 0 },
   CreatedAt: "2026-03-14T13:47:40Z",
   UpdatedAt: "2026-03-14T13:47:40Z",
   ReadyAt: null,
   Version: 1,
+};
+
+const SAMPLE_DISPLAY_ORDER = {
+  OrderID: 9100,
+  Status: "QUEUED",
+  TotalItemCount: 2,
+  ItemStatusCounts: { Queued: 2, InProgress: 0, Blocked: 0, Ready: 0 },
+  CreatedAt: "2026-03-14T13:47:40Z",
+  UpdatedAt: "2026-03-14T13:47:40Z",
 };
 
 const SAMPLE_ITEM = {
@@ -156,12 +164,12 @@ describe("Staff client — state machine flows", () => {
     expect(fetchMock.mock.calls[1][0]).toContain("/api/v1/production/orders");
   });
 
-  // ── 7d: Display mode token acquisition ──
+  // ── 7d: Display mode token acquisition and display endpoint ──
 
-  it("acquires display token and shows read-only board", async () => {
+  it("acquires display token and shows read-only board using display endpoint", async () => {
     mockGetDisplayToken.mockResolvedValueOnce("display-jwt");
 
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER]));
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_DISPLAY_ORDER]));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
@@ -179,6 +187,9 @@ describe("Staff client — state machine flows", () => {
 
     // No detail panel in display mode
     expect(screen.queryByTestId("order-detail")).not.toBeInTheDocument();
+
+    // Display mode uses the display endpoint
+    expect(fetchMock.mock.calls[0][0]).toContain("/api/v1/production/display/orders");
 
     expect(mockGetDisplayToken).toHaveBeenCalledTimes(1);
   });
@@ -235,7 +246,7 @@ describe("Staff client — state machine flows", () => {
 
     mockGetDisplayToken.mockResolvedValueOnce("reacquired-jwt");
 
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER]));
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_DISPLAY_ORDER]));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
@@ -274,7 +285,7 @@ describe("Staff client — state machine flows", () => {
   it("returns to landing screen on display exit", async () => {
     mockGetDisplayToken.mockResolvedValueOnce("display-jwt");
 
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER]));
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_DISPLAY_ORDER]));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
@@ -318,7 +329,7 @@ describe("Staff client — state machine flows", () => {
   it("renders display mode as read-only with no command buttons", async () => {
     mockGetDisplayToken.mockResolvedValueOnce("display-jwt");
 
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER]));
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_DISPLAY_ORDER]));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<App />);
@@ -335,9 +346,12 @@ describe("Staff client — state machine flows", () => {
 
     // No detail panel
     expect(screen.queryByTestId("order-detail")).not.toBeInTheDocument();
+
+    // Display cards should not show customer name
+    expect(screen.queryByText("Demo User")).not.toBeInTheDocument();
   });
 
-  // ── 7m: Pickup command (interactive, adapted for new session format) ──
+  // ── 7m: Pickup command (interactive) ──
 
   it("sends pickup command and refreshes board in interactive mode", async () => {
     setInteractiveSession();
@@ -360,13 +374,13 @@ describe("Staff client — state machine flows", () => {
       // Detail reload after command
       .mockResolvedValueOnce(
         jsonResponse({
-          order: { ...SAMPLE_ORDER, Status: "IN_PROGRESS", Version: 2 },
+          order: { ...SAMPLE_ORDER, Status: "IN_PROGRESS", Version: 2, ItemStatusCounts: { Queued: 1, InProgress: 1, Blocked: 0, Ready: 0 } },
           items: [{ ...SAMPLE_ITEM, Status: "IN_PROGRESS", ClaimedByUserID: 2001, ClaimedByDisplayName: "Staff One", Version: 2 }],
         })
       )
       // Board reload after command
       .mockResolvedValueOnce(
-        jsonResponse([{ ...SAMPLE_ORDER, Status: "IN_PROGRESS", Version: 2 }])
+        jsonResponse([{ ...SAMPLE_ORDER, Status: "IN_PROGRESS", Version: 2, ItemStatusCounts: { Queued: 1, InProgress: 1, Blocked: 0, Ready: 0 } }])
       );
 
     vi.stubGlobal("fetch", fetchMock);
@@ -391,7 +405,7 @@ describe("Staff client — state machine flows", () => {
     });
   });
 
-  // ── 7m: Ready command (interactive, adapted for new session format) ──
+  // ── 7m: Ready command (interactive) ──
 
   it("sends ready command and refreshes order to READY in interactive mode", async () => {
     setInteractiveSession();
@@ -408,6 +422,7 @@ describe("Staff client — state machine flows", () => {
       ...SAMPLE_ORDER,
       Status: "IN_PROGRESS",
       Version: 2,
+      ItemStatusCounts: { Queued: 0, InProgress: 1, Blocked: 0, Ready: 0 },
     };
 
     const fetchMock = vi.fn()
@@ -428,13 +443,13 @@ describe("Staff client — state machine flows", () => {
       // Detail reload
       .mockResolvedValueOnce(
         jsonResponse({
-          order: { ...SAMPLE_ORDER, Status: "READY", ReadyItemCount: 1, Version: 3 },
+          order: { ...SAMPLE_ORDER, Status: "READY", Version: 3, ItemStatusCounts: { Queued: 0, InProgress: 0, Blocked: 0, Ready: 1 } },
           items: [{ ...inProgressItem, Status: "READY", Version: 3 }],
         })
       )
       // Board reload
       .mockResolvedValueOnce(
-        jsonResponse([{ ...SAMPLE_ORDER, Status: "READY", ReadyItemCount: 1, Version: 3 }])
+        jsonResponse([{ ...SAMPLE_ORDER, Status: "READY", Version: 3, ItemStatusCounts: { Queued: 0, InProgress: 0, Blocked: 0, Ready: 1 } }])
       );
 
     vi.stubGlobal("fetch", fetchMock);
@@ -473,5 +488,137 @@ describe("Staff client — state machine flows", () => {
     });
 
     expect(screen.queryByTestId("service-config")).not.toBeInTheDocument();
+  });
+
+  // ── Step 10: Mixed-status emoji summary rendering ──
+
+  it("renders mixed-status order in correct lane with emoji summary", async () => {
+    setInteractiveSession();
+
+    const mixedOrder = {
+      ...SAMPLE_ORDER,
+      OrderID: 9200,
+      Status: "IN_PROGRESS",
+      TotalItemCount: 6,
+      ItemStatusCounts: { Queued: 2, InProgress: 1, Blocked: 0, Ready: 3 },
+    };
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([mixedOrder]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByTestId("order-9200");
+
+    // Order appears in IN_PROGRESS lane only
+    const inProgressLane = screen.getByTestId("lane-IN_PROGRESS");
+    expect(within(inProgressLane).getByTestId("order-9200")).toBeInTheDocument();
+
+    // Not in other lanes
+    const queuedLane = screen.getByTestId("lane-QUEUED");
+    expect(within(queuedLane).queryByTestId("order-9200")).not.toBeInTheDocument();
+    const blockedLane = screen.getByTestId("lane-BLOCKED");
+    expect(within(blockedLane).queryByTestId("order-9200")).not.toBeInTheDocument();
+    const readyLane = screen.getByTestId("lane-READY");
+    expect(within(readyLane).queryByTestId("order-9200")).not.toBeInTheDocument();
+
+    // Check emoji summary with accessible labels
+    const orderCard = screen.getByTestId("order-9200");
+    expect(within(orderCard).getByLabelText("2 queued")).toBeInTheDocument();
+    expect(within(orderCard).getByLabelText("1 in progress")).toBeInTheDocument();
+    expect(within(orderCard).getByLabelText("0 blocked")).toBeInTheDocument();
+    expect(within(orderCard).getByLabelText("3 ready")).toBeInTheDocument();
+
+    // Verify the item status summary group
+    expect(within(orderCard).getByRole("group", { name: "item status summary" })).toBeInTheDocument();
+  });
+
+  // ── Step 11: Interactive detail flow with lane layout ──
+
+  it("opens detail rail after clicking order in lane and shows item commands", async () => {
+    setInteractiveSession();
+
+    const fetchMock = vi.fn()
+      // Initial board load
+      .mockResolvedValueOnce(jsonResponse([SAMPLE_ORDER]))
+      // Order detail load
+      .mockResolvedValueOnce(jsonResponse(SAMPLE_DETAIL));
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByTestId("order-9100");
+
+    // Order is in the QUEUED lane
+    const queuedLane = screen.getByTestId("lane-QUEUED");
+    const orderCard = within(queuedLane).getByTestId("order-9100");
+    expect(orderCard.tagName).toBe("BUTTON");
+
+    // Click order to open detail
+    fireEvent.click(orderCard);
+
+    // Detail rail opens with order info
+    await screen.findByTestId("item-item-1");
+    const detailPanel = screen.getByTestId("order-detail");
+    expect(detailPanel).toBeInTheDocument();
+    expect(within(detailPanel).getByText("Order #9100")).toBeInTheDocument();
+    expect(within(detailPanel).getByText("Margherita Pizza")).toBeInTheDocument();
+
+    // Item commands are available
+    expect(screen.getByTestId("pickup-item-1")).toBeInTheDocument();
+    expect(screen.getByTestId("block-item-1")).toBeInTheDocument();
+  });
+
+  // ── Step 12: Display mode uses display endpoint ──
+
+  it("uses display endpoint in display mode, not interactive endpoint", async () => {
+    mockGetDisplayToken.mockResolvedValueOnce("display-jwt");
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_DISPLAY_ORDER]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    fireEvent.click(screen.getByTestId("mode-display"));
+
+    await screen.findByTestId("order-9100");
+
+    // Verify the fetch URL is the display endpoint
+    expect(fetchMock).toHaveBeenCalled();
+    const fetchUrl = fetchMock.mock.calls[0][0] as string;
+    expect(fetchUrl).toContain("/api/v1/production/display/orders");
+    expect(fetchUrl).not.toMatch(/\/api\/v1\/production\/orders\?/);
+
+    // Display cards show order number and emoji summary but no customer name
+    const orderCard = screen.getByTestId("order-9100");
+    expect(orderCard).toHaveTextContent("#9100");
+    expect(within(orderCard).getByLabelText("2 queued")).toBeInTheDocument();
+    expect(screen.queryByText("Demo User")).not.toBeInTheDocument();
+  });
+
+  // ── Lane placement by order status ──
+
+  it("places orders in correct lanes by order status", async () => {
+    setInteractiveSession();
+
+    const orders = [
+      { ...SAMPLE_ORDER, OrderID: 9001, Status: "QUEUED" },
+      { ...SAMPLE_ORDER, OrderID: 9002, Status: "IN_PROGRESS", ItemStatusCounts: { Queued: 0, InProgress: 2, Blocked: 0, Ready: 0 } },
+      { ...SAMPLE_ORDER, OrderID: 9003, Status: "BLOCKED", ItemStatusCounts: { Queued: 0, InProgress: 0, Blocked: 2, Ready: 0 } },
+      { ...SAMPLE_ORDER, OrderID: 9004, Status: "READY", ItemStatusCounts: { Queued: 0, InProgress: 0, Blocked: 0, Ready: 2 } },
+    ];
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(orders));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByTestId("order-9001");
+
+    expect(within(screen.getByTestId("lane-QUEUED")).getByTestId("order-9001")).toBeInTheDocument();
+    expect(within(screen.getByTestId("lane-IN_PROGRESS")).getByTestId("order-9002")).toBeInTheDocument();
+    expect(within(screen.getByTestId("lane-BLOCKED")).getByTestId("order-9003")).toBeInTheDocument();
+    expect(within(screen.getByTestId("lane-READY")).getByTestId("order-9004")).toBeInTheDocument();
   });
 });

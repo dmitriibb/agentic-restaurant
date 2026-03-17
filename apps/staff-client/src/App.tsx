@@ -10,14 +10,17 @@ import {
 } from "./features/auth/session";
 import {
   fetchOrders,
+  fetchDisplayOrders,
   fetchOrderDetail,
   sendItemCommand,
 } from "./features/production/api";
 import type {
   ProductionOrder,
+  DisplayOrder,
   ProductionItem,
   OrderDetail,
   ItemCommand,
+  ItemStatusCounts,
 } from "./features/production/types";
 import {
   STATUS_QUEUED,
@@ -28,7 +31,12 @@ import {
 
 const POLL_INTERVAL_MS = 5000;
 
-const STATUS_SECTIONS = [STATUS_QUEUED, STATUS_IN_PROGRESS, STATUS_BLOCKED, STATUS_READY] as const;
+const LANE_DEFINITIONS = [
+  { status: STATUS_QUEUED, label: "Queued" },
+  { status: STATUS_IN_PROGRESS, label: "In Progress" },
+  { status: STATUS_BLOCKED, label: "Blocked" },
+  { status: STATUS_READY, label: "Ready" },
+] as const;
 
 type AppView =
   | "landing"
@@ -97,6 +105,57 @@ function statusBadgeClass(status: string): string {
   }
 }
 
+function laneHeaderClass(status: string): string {
+  switch (status) {
+    case STATUS_QUEUED:
+      return "lane-header queued";
+    case STATUS_IN_PROGRESS:
+      return "lane-header in-progress";
+    case STATUS_BLOCKED:
+      return "lane-header blocked";
+    case STATUS_READY:
+      return "lane-header ready";
+    default:
+      return "lane-header";
+  }
+}
+
+function renderEmojiSummary(counts: ItemStatusCounts): JSX.Element {
+  return (
+    <div className="emoji-summary" role="group" aria-label="item status summary">
+      <span className="emoji-chip" aria-label={`${counts.Queued} queued`}>
+        ⏳ {counts.Queued}
+      </span>
+      <span className="emoji-chip" aria-label={`${counts.InProgress} in progress`}>
+        🍳 {counts.InProgress}
+      </span>
+      <span className="emoji-chip" aria-label={`${counts.Blocked} blocked`}>
+        ⚠️ {counts.Blocked}
+      </span>
+      <span className="emoji-chip" aria-label={`${counts.Ready} ready`}>
+        ✅ {counts.Ready}
+      </span>
+    </div>
+  );
+}
+
+function sortOrdersForLane(
+  orders: (ProductionOrder | DisplayOrder)[],
+  status: string
+): (ProductionOrder | DisplayOrder)[] {
+  const filtered = orders.filter((o) => o.Status === status);
+  if (status === STATUS_READY) {
+    // Most recently updated first
+    return [...filtered].sort(
+      (a, b) => new Date(b.UpdatedAt).getTime() - new Date(a.UpdatedAt).getTime()
+    );
+  }
+  // Oldest first
+  return [...filtered].sort(
+    (a, b) => new Date(a.CreatedAt).getTime() - new Date(b.CreatedAt).getTime()
+  );
+}
+
 export function App() {
   const initial = computeInitialState();
 
@@ -113,6 +172,7 @@ export function App() {
 
   // Board state
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
+  const [displayOrders, setDisplayOrders] = useState<DisplayOrder[]>([]);
   const [boardLoading, setBoardLoading] = useState(false);
   const [boardError, setBoardError] = useState<string | null>(null);
 
@@ -194,6 +254,7 @@ export function App() {
     clearSession();
     setSession(null);
     setOrders([]);
+    setDisplayOrders([]);
     setSelectedOrderId(null);
     setOrderDetail(null);
     setBoardError(null);
@@ -208,12 +269,17 @@ export function App() {
 
   // --- Board loading ---
 
-  async function loadBoard(currentToken: string) {
+  async function loadBoard(currentToken: string, mode: "interactive" | "display") {
     setBoardLoading(true);
     setBoardError(null);
     try {
-      const data = await fetchOrders(currentToken);
-      setOrders(data);
+      if (mode === "display") {
+        const data = await fetchDisplayOrders(currentToken);
+        setDisplayOrders(data);
+      } else {
+        const data = await fetchOrders(currentToken);
+        setOrders(data);
+      }
     } catch (error) {
       setBoardError(error instanceof Error ? error.message : "Failed to load board.");
     } finally {
@@ -248,7 +314,7 @@ export function App() {
     try {
       await sendItemCommand(session.accessToken, itemId, command, { reason });
       await loadDetail(selectedOrderId);
-      await loadBoard(session.accessToken);
+      await loadBoard(session.accessToken, session.mode as "interactive" | "display");
     } catch (error) {
       setCommandError(error instanceof Error ? error.message : "Command failed.");
     } finally {
@@ -262,19 +328,14 @@ export function App() {
 
   useEffect(() => {
     if (!isBoardView || !session) return;
-    void loadBoard(session.accessToken);
+    const mode = session.mode as "interactive" | "display";
+    void loadBoard(session.accessToken, mode);
     const interval = setInterval(() => {
-      void loadBoard(session.accessToken);
+      void loadBoard(session.accessToken, mode);
     }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBoardView, session?.accessToken]);
-
-  // --- Helpers ---
-
-  function ordersByStatus(status: string): ProductionOrder[] {
-    return orders.filter((o) => o.Status === status);
-  }
 
   // --- Render ---
 
@@ -393,6 +454,8 @@ export function App() {
 
   // Board views (interactive_board and display_board)
   const isDisplay = view === "display_board";
+  const currentOrders: (ProductionOrder | DisplayOrder)[] = isDisplay ? displayOrders : orders;
+  const hasOrders = currentOrders.length > 0;
 
   return (
     <div className="app-shell">
@@ -413,26 +476,14 @@ export function App() {
               Signed in as <strong>{displayUserName(session.user)}</strong>
             </span>
           )}
-          {!isDisplay && (
-            <button
-              className="action"
-              type="button"
-              onClick={() => session && void loadBoard(session.accessToken)}
-              disabled={boardLoading}
-            >
-              Refresh
-            </button>
-          )}
-          {isDisplay && (
-            <button
-              className="action"
-              type="button"
-              onClick={() => session && void loadBoard(session.accessToken)}
-              disabled={boardLoading}
-            >
-              Refresh
-            </button>
-          )}
+          <button
+            className="action"
+            type="button"
+            onClick={() => session && void loadBoard(session.accessToken, session.mode as "interactive" | "display")}
+            disabled={boardLoading}
+          >
+            Refresh
+          </button>
           {!isDisplay ? (
             <button className="action ghost" type="button" onClick={resetAllState}>
               Logout
@@ -446,58 +497,45 @@ export function App() {
       </header>
 
       <main>
+        {boardLoading && !hasOrders && <p className="muted">Loading orders...</p>}
+        {boardError && <p className="error-text">{boardError}</p>}
+
         {isDisplay ? (
-          /* Display board: read-only, no detail panel */
-          <div className="board-layout" style={{ gridTemplateColumns: "1fr" }}>
-            <section className="order-list-panel" aria-label="order list" data-testid="order-list">
-              <h2>Orders</h2>
-              {boardLoading && orders.length === 0 && <p className="muted">Loading orders...</p>}
-              {boardError && <p className="error-text">{boardError}</p>}
-              {STATUS_SECTIONS.map((status) => {
-                const group = ordersByStatus(status);
-                if (group.length === 0) return null;
-                return (
-                  <div className="status-section" key={status}>
-                    <h3 className={statusBadgeClass(status)}>{status.replace("_", " ")}</h3>
-                    {group.map((order) => (
-                      <div
-                        key={order.OrderID}
-                        className="order-card"
-                        data-testid={`order-${order.OrderID}`}
-                      >
-                        <div className="order-card-header">
-                          <strong>Order #{order.OrderID}</strong>
-                          <span className={statusBadgeClass(order.Status)}>{order.Status.replace("_", " ")}</span>
-                        </div>
-                        <p className="muted">
-                          Items: {order.ReadyItemCount}/{order.TotalItemCount} ready
-                          {order.BlockedItemCount > 0 && ` | ${order.BlockedItemCount} blocked`}
-                        </p>
-                        <p className="muted">{formatTime(order.CreatedAt)}</p>
+          /* Display board: four lane columns, read-only, no detail rail */
+          <div className="board-lanes" data-testid="order-list">
+            {LANE_DEFINITIONS.map(({ status, label }) => {
+              const laneOrders = sortOrdersForLane(currentOrders, status);
+              return (
+                <div className="lane" key={status} data-testid={`lane-${status}`}>
+                  <h3 className={laneHeaderClass(status)}>{label}</h3>
+                  {laneOrders.map((order) => (
+                    <div
+                      key={order.OrderID}
+                      className="order-card"
+                      data-testid={`order-${order.OrderID}`}
+                    >
+                      <div className="order-card-header">
+                        <strong>Order #{order.OrderID}</strong>
                       </div>
-                    ))}
-                  </div>
-                );
-              })}
-              {!boardLoading && orders.length === 0 && !boardError && (
-                <p className="muted">No production orders.</p>
-              )}
-            </section>
+                      {renderEmojiSummary(order.ItemStatusCounts)}
+                      <p className="muted">{formatTime(order.CreatedAt)}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         ) : (
-          /* Interactive board: full functionality */
-          <div className="board-layout">
-            <section className="order-list-panel" aria-label="order list" data-testid="order-list">
-              <h2>Orders</h2>
-              {boardLoading && orders.length === 0 && <p className="muted">Loading orders...</p>}
-              {boardError && <p className="error-text">{boardError}</p>}
-              {STATUS_SECTIONS.map((status) => {
-                const group = ordersByStatus(status);
-                if (group.length === 0) return null;
-                return (
-                  <div className="status-section" key={status}>
-                    <h3 className={statusBadgeClass(status)}>{status.replace("_", " ")}</h3>
-                    {group.map((order) => (
+          /* Interactive board: four lane columns + detail rail */
+          <div className="board-lanes-with-detail" data-testid="order-list">
+            {LANE_DEFINITIONS.map(({ status, label }) => {
+              const laneOrders = sortOrdersForLane(orders, status);
+              return (
+                <div className="lane" key={status} data-testid={`lane-${status}`}>
+                  <h3 className={laneHeaderClass(status)}>{label}</h3>
+                  {laneOrders.map((order) => {
+                    const productionOrder = order as ProductionOrder;
+                    return (
                       <button
                         key={order.OrderID}
                         type="button"
@@ -507,25 +545,18 @@ export function App() {
                       >
                         <div className="order-card-header">
                           <strong>Order #{order.OrderID}</strong>
-                          <span className={statusBadgeClass(order.Status)}>{order.Status.replace("_", " ")}</span>
                         </div>
                         <p className="muted">
-                          {order.UserDisplayName ?? `User #${order.UserID}`}
+                          {productionOrder.UserDisplayName ?? `User #${productionOrder.UserID}`}
                         </p>
-                        <p className="muted">
-                          Items: {order.ReadyItemCount}/{order.TotalItemCount} ready
-                          {order.BlockedItemCount > 0 && ` | ${order.BlockedItemCount} blocked`}
-                        </p>
+                        {renderEmojiSummary(order.ItemStatusCounts)}
                         <p className="muted">{formatTime(order.CreatedAt)}</p>
                       </button>
-                    ))}
-                  </div>
-                );
-              })}
-              {!boardLoading && orders.length === 0 && !boardError && (
-                <p className="muted">No production orders.</p>
-              )}
-            </section>
+                    );
+                  })}
+                </div>
+              );
+            })}
 
             <section className="detail-panel" aria-label="order detail" data-testid="order-detail">
               {selectedOrderId === null ? (
@@ -589,6 +620,10 @@ export function App() {
               ) : null}
             </section>
           </div>
+        )}
+
+        {!boardLoading && !hasOrders && !boardError && (
+          <p className="muted">No production orders.</p>
         )}
       </main>
     </div>

@@ -160,23 +160,58 @@ input {
 
 /* ── Board layout ── */
 
-.board-layout {
+.board-lanes {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   align-items: start;
 }
 
-.order-list-panel {
-  border-radius: 18px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  padding: 1rem 1.1rem;
+.board-lanes-with-detail {
   display: grid;
-  gap: 0.6rem;
+  grid-template-columns: repeat(4, 1fr) minmax(300px, 1.2fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.lane {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
   max-height: calc(100vh - 180px);
   overflow-y: auto;
+}
+
+.lane-header {
+  display: block;
+  padding: 0.4rem 0.7rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  margin: 0 0 0.3rem;
+}
+
+.lane-header.queued {
+  background: #e8e5db;
+  color: #555;
+}
+
+.lane-header.in-progress {
+  background: #dbe9f8;
+  color: #1a5fa0;
+}
+
+.lane-header.blocked {
+  background: #fce4cc;
+  color: #a04a1a;
+}
+
+.lane-header.ready {
+  background: #d4f0df;
+  color: #1a7a3a;
 }
 
 .detail-panel {
@@ -190,11 +225,18 @@ input {
   gap: 0.8rem;
 }
 
-/* ── Status sections ── */
+/* ── Emoji summary ── */
 
-.status-section {
-  display: grid;
-  gap: 0.4rem;
+.emoji-summary {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.emoji-chip {
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 /* ── Order cards ── */
@@ -359,12 +401,26 @@ input {
 
 /* ── Responsive ── */
 
+@media (max-width: 1200px) {
+  .board-lanes-with-detail {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .board-lanes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
-  .board-layout {
+  .board-lanes-with-detail {
     grid-template-columns: 1fr;
   }
 
-  .order-list-panel {
+  .board-lanes {
+    grid-template-columns: 1fr;
+  }
+
+  .lane {
     max-height: none;
   }
 }

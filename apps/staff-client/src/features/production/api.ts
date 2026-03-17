@@ -1,5 +1,5 @@
 import { serviceBaseUrls } from "../../shared/api/config";
-import type { ProductionOrder, OrderDetail, CommandResponse, ItemCommand } from "./types";
+import type { ProductionOrder, DisplayOrder, OrderDetail, CommandResponse, ItemCommand } from "./types";
 
 export async function fetchOrders(token: string, status?: string): Promise<ProductionOrder[]> {
   const params = new URLSearchParams();
@@ -21,6 +21,25 @@ export async function fetchOrders(token: string, status?: string): Promise<Produ
   }
 
   return (await response.json()) as ProductionOrder[];
+}
+
+export async function fetchDisplayOrders(token: string): Promise<DisplayOrder[]> {
+  const params = new URLSearchParams();
+  params.set("limit", "200");
+
+  const response = await fetch(
+    `${serviceBaseUrls.productionService}/api/v1/production/display/orders?${params.toString()}`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load production orders.");
+  }
+
+  return (await response.json()) as DisplayOrder[];
 }
 
 export async function fetchOrderDetail(token: string, orderId: number): Promise<OrderDetail> {

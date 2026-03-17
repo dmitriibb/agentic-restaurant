@@ -1,3 +1,10 @@
+export type ItemStatusCounts = {
+  Queued: number;
+  InProgress: number;
+  Blocked: number;
+  Ready: number;
+};
+
 export type ProductionOrder = {
   OrderID: number;
   ExternalRequestID: string;
@@ -5,12 +12,20 @@ export type ProductionOrder = {
   UserDisplayName: string | null;
   Status: string;
   TotalItemCount: number;
-  ReadyItemCount: number;
-  BlockedItemCount: number;
+  ItemStatusCounts: ItemStatusCounts;
   CreatedAt: string;
   UpdatedAt: string;
   ReadyAt: string | null;
   Version: number;
+};
+
+export type DisplayOrder = {
+  OrderID: number;
+  Status: string;
+  TotalItemCount: number;
+  ItemStatusCounts: ItemStatusCounts;
+  CreatedAt: string;
+  UpdatedAt: string;
 };
 
 export type ProductionItem = {
