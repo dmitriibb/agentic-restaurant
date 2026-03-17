@@ -4,7 +4,7 @@
 id: task-021-redesign-staff-board-into-status-lanes-and-detail-rail
 title: Redesign staff board into status lanes and detail rail
 pipeline: implementation
-status: pr_created
+status: done
 priority: high
 type: feature
 architecture: not_requested
