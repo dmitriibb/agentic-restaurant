@@ -52,6 +52,7 @@ All agents must load and apply these skills when applicable:
 | get-local-time | `skills/get-local-time/SKILL.md` | Before writing ANY timestamp (audit logs, task metadata, any dated output) |
 | run-pipeline-stage | `skills/run-pipeline-stage/SKILL.md` | Supervisor: before handing off to any execution-stage agent |
 | maintain-domain-brain | `skills/maintain-domain-brain/SKILL.md` | Any code change touching business logic, domain entities, flows, or state transitions |
+| ui-design-with-penpot | `skills/ui-design-with-penpot/SKILL.md` | Any task involving inspecting, creating, or updating UI designs, layouts, or wireframes with Penpot |
 
 
 ## Agents rules
