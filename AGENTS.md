@@ -41,6 +41,7 @@ If any required field is missing, stop and restart with a valid first message.
 8. The first chat message from each fresh agent must explicitly identify the role, for example: `Working as planner agent.`
 9. All timestamps in audit logs and task metadata MUST come from the host machine's system clock. Use the `get-local-time` skill (`skills/get-local-time/SKILL.md`). NEVER fabricate, estimate, or hardcode timestamps. Each entry requires a fresh time fetch.
 10. In multi-agent execution, each pipeline stage MUST be executed in a fresh, isolated agent context. The supervisor MUST NOT role-play other agents within its own context. Use the `run-pipeline-stage` skill (`skills/run-pipeline-stage/SKILL.md`) for platform-specific delegation mechanisms (e.g., `runSubagent` in Copilot, native orchestration in Codex). Simulating multiple roles in a single agent context is an invalid execution.
+11. If the task involves UI changes (frontend apps, React, HTML, or CSS), read `docs/ui-design-rules.md` before making any UI modifications to ensure consistency across all client applications.
 
 ## Required Skills
 

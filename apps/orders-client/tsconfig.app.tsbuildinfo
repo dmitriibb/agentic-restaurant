@@ -1,1 +1,1 @@
-{"root":["./src/app.test.tsx","./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/shared/api/config.ts","./src/test/setup.ts"],"version":"5.9.3"}
+{"root":["./src/app.test.tsx","./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/features/auth/api.ts","./src/features/auth/apptoken.test.ts","./src/features/auth/apptoken.ts","./src/features/auth/session.ts","./src/features/basket/model.ts","./src/features/menu/api.ts","./src/features/orders/api.ts","./src/shared/api/config.ts","./src/test/setup.ts"],"version":"5.9.3"}

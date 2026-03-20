@@ -32,6 +32,7 @@ infrastructure:
     new_backend_services: go
     existing_services: java/kotlin (Spring Boot)
     jvm_memory: fixed heap (Xmx 256m) + SerialGC for local dev
+    ui_design: docs/ui-design-rules.md
 
 flows:
   user_authentication:
