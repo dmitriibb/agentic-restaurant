@@ -2,7 +2,15 @@
 setlocal
 
 REM ── run.cmd — build & start every service with one command ──
-
+REM Find local IP dynamically for the QR code
+FOR /F "tokens=2 delims=:" %%A IN ('ipconfig ^| findstr /C:"IPv4 Address"') DO (
+    IF NOT DEFINED LOCAL_IP SET "LOCAL_IP=%%A"
+)
+IF DEFINED LOCAL_IP (
+    SET "LOCAL_IP=%LOCAL_IP: =%"
+) ELSE (
+    SET "LOCAL_IP=localhost"
+)
 set COMPOSE_FILE=docker-compose.yml
 
 if "%~1"=="" goto :up

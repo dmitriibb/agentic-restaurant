@@ -250,6 +250,8 @@ services:
   orders-client:
     build:
       context: ./apps/orders-client
+      args:
+        VITE_LOCAL_IP: ${LOCAL_IP:-}
     container_name: restaurant-orders-client
     ports:
       - "80:80"

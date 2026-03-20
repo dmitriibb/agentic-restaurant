@@ -12,6 +12,8 @@ COPY . .
 ENV VITE_USERS_SERVICE_BASE_URL=""
 ENV VITE_MENU_SERVICE_BASE_URL=""
 ENV VITE_ORDERS_SERVICE_BASE_URL=""
+ARG VITE_LOCAL_IP
+ENV VITE_LOCAL_IP=$VITE_LOCAL_IP
 RUN npm run build
 
 # ── Runtime stage ────────────────────────────────────────────

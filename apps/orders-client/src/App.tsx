@@ -1,4 +1,5 @@
 ﻿import { useMemo, useState, useEffect, useRef, type FormEvent } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { createGuestUser, login, type UserSummary } from "./features/auth/api";
 import { getAppToken } from "./features/auth/appToken";
 import { readAuthSession, writeAuthSession, type UiMode } from "./features/auth/session";
@@ -25,6 +26,46 @@ function formatMode(mode: UiMode | null): string {
     return "guest";
   }
   return "not selected";
+}
+
+function LocalAccessQR() {
+  const defaultIp = import.meta.env.VITE_LOCAL_IP || "";
+  const [ipValue, setIpValue] = useState(defaultIp);
+  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
+  useEffect(() => {
+    if (!isLocalhost) {
+      setIpValue(window.location.hostname);
+    } else if (defaultIp && !ipValue) {
+      setIpValue(defaultIp);
+    }
+  }, [isLocalhost, defaultIp]);
+
+  const displayUrl = ipValue ? `${window.location.protocol}//${ipValue}${window.location.port ? `:${window.location.port}` : ""}` : "";
+
+  return (
+    <div className="qr-container surface-card" style={{ marginTop: "2rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <p style={{ marginBottom: "1rem" }}><strong>Local Network Access</strong></p>
+      {ipValue ? (
+        <>
+          <div style={{ background: "white", padding: "10px", borderRadius: "8px" }}>
+            <QRCodeSVG value={displayUrl} size={150} />
+          </div>
+          <p className="muted" style={{ marginTop: "1rem", wordBreak: "break-all" }}>{displayUrl}</p>
+          {isLocalhost && (
+            <button className="action ghost" style={{ marginTop: "0.5rem" }} onClick={() => setIpValue("")} type="button">Edit IP</button>
+          )}
+        </>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
+           <p className="muted">Enter your local IP (e.g. 192.168.1.100) to generate a QR code for mobile testing.</p>
+           <input type="text" placeholder="e.g. 192.168.1.100" style={{ padding: "0.5rem", textAlign: "center" }} onKeyDown={(e) => {
+             if (e.key === "Enter") setIpValue(e.currentTarget.value);
+           }} onBlur={(e) => setIpValue(e.currentTarget.value)} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function App() {
@@ -201,17 +242,20 @@ export function App() {
   const renderAuthContent = () => (
     <main className="entry-shell" aria-label="authentication" data-testid="auth-gate">
       {entryStep === "landing" ? (
-        <section className="entry-card" aria-label="mode selection">
-          <div className="mode-choice-grid">
-            <button className="mode-choice mode-choice-primary" type="button" onClick={() => { setEntryStep("registered_credentials"); setAuthError(null); }}>
-              <span className="mode-choice-title">Registered User</span>
-            </button>
-            <button className="mode-choice mode-choice-secondary" type="button" onClick={() => { setEntryStep("guest_name"); setAuthError(null); }}>
-              <span className="mode-choice-title">Guest</span>
-            </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "2rem", width: "100%", maxWidth: "480px" }}>
+            <section className="entry-card" aria-label="mode selection">
+              <div className="mode-choice-grid">
+                <button className="mode-choice mode-choice-primary" type="button" onClick={() => { setEntryStep("registered_credentials"); setAuthError(null); }}>
+                  <span className="mode-choice-title">Registered User</span>
+                </button>
+                <button className="mode-choice mode-choice-secondary" type="button" onClick={() => { setEntryStep("guest_name"); setAuthError(null); }}>
+                  <span className="mode-choice-title">Guest</span>
+                </button>
+              </div>
+            </section>
+            <LocalAccessQR />
           </div>
-        </section>
-      ) : null}
+        ) : null}
 
       {entryStep === "registered_credentials" ? (
         <section className="surface-card entry-card">
@@ -248,7 +292,9 @@ export function App() {
     <div className="content-grid main-content">
       <div className="app-toolbar">
         <p className="mode-chip" data-testid="mode-chip">Mode: {formatMode(mode)}</p>
-        <button className="action" type="button" onClick={reloadMenu} disabled={menuLoading}>Reload Menu</button>
+        <button className="action icon-btn" type="button" onClick={reloadMenu} disabled={menuLoading} aria-label="Reload Menu" title="Reload Menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        </button>
       </div>
 
       <section className="surface-card" aria-label="menu">

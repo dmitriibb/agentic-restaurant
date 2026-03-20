@@ -2,7 +2,13 @@
 set -euo pipefail
 
 # ── run.sh — build & start every service with one command ──
-
+if command -v ip >/dev/null 2>&1; then
+  export LOCAL_IP=$(ip -4 addr show scope global | grep inet | head -n1 | awk '{print $2}' | cut -d/ -f1)
+elif command -v hostname >/dev/null 2>&1; then
+  export LOCAL_IP=$(hostname -I | awk '{print $1}')
+else
+  export LOCAL_IP="localhost"
+fi
 COMPOSE_FILE="docker-compose.yml"
 
 usage() {
