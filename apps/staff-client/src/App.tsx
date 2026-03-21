@@ -176,30 +176,50 @@ function LocalAccessQR({ hidden }: { hidden: boolean }) {
     return null;
   }
 
-  const localIp = import.meta.env.VITE_LOCAL_IP || "";
-  const isLocalHost =
-    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  const host = isLocalHost ? localIp : window.location.hostname;
+  const defaultIp = import.meta.env.VITE_LOCAL_IP || "";
+  const [ipValue, setIpValue] = useState(defaultIp);
+  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
-  if (!host) {
-    return (
-      <section className="surface-card qr-card" aria-label="local access qr">
-        <h3>QR Access</h3>
-        <p className="muted">Set VITE_LOCAL_IP to generate local access QR code.</p>
-      </section>
-    );
-  }
+  useEffect(() => {
+    if (!isLocalhost) {
+      setIpValue(window.location.hostname);
+    } else if (defaultIp && !ipValue) {
+      setIpValue(defaultIp);
+    }
+  }, [isLocalhost, defaultIp, ipValue]);
 
-  const url = `${window.location.protocol}//${host}${window.location.port ? `:${window.location.port}` : ""}`;
+  const displayUrl = ipValue ? `${window.location.protocol}//${ipValue}${window.location.port ? `:${window.location.port}` : ""}` : "";
 
   return (
-    <section className="surface-card qr-card" aria-label="local access qr">
-      <h3>QR Access</h3>
-      <div className="qr-box">
-        <QRCodeSVG value={url} size={126} />
-      </div>
-      <p className="muted qr-url">{url}</p>
-    </section>
+    <div className="qr-container surface-card" style={{ marginTop: "2rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <p style={{ marginBottom: "1rem" }}><strong>Local Network Access</strong></p>
+      {ipValue ? (
+        <>
+          <div style={{ background: "white", padding: "10px", borderRadius: "8px" }}>
+            <QRCodeSVG value={displayUrl} size={150} />
+          </div>
+          <p className="muted" style={{ marginTop: "1rem", wordBreak: "break-all" }}>{displayUrl}</p>
+          {isLocalhost && (
+            <button className="action ghost" style={{ marginTop: "0.5rem" }} onClick={() => setIpValue("")} type="button">Edit IP</button>
+          )}
+        </>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
+          <p className="muted">Enter your local IP (e.g. 192.168.1.100) to generate a QR code for mobile testing.</p>
+          <input
+            type="text"
+            placeholder="e.g. 192.168.1.100"
+            style={{ padding: "0.5rem", textAlign: "center" }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                setIpValue(event.currentTarget.value);
+              }
+            }}
+            onBlur={(event) => setIpValue(event.currentTarget.value)}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -235,6 +255,7 @@ export function App() {
 
   // UI controls
   const [textSize, setTextSize] = useState<TextSize>(readInitialTextSize());
+  const [isMobileViewport, setIsMobileViewport] = useState(window.innerWidth < 768);
   const [navOpen, setNavOpen] = useState(window.innerWidth >= 768);
   const [activeTab, setActiveTab] = useState<"dashboard" | "settings">("dashboard");
   const navRef = useRef<HTMLElement | null>(null);
@@ -254,6 +275,7 @@ export function App() {
 
   useEffect(() => {
     const onResize = () => {
+      setIsMobileViewport(window.innerWidth < 768);
       if (window.innerWidth >= 768) {
         setNavOpen(true);
       } else {
@@ -442,97 +464,164 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBoardView, session?.accessToken]);
 
+  const renderModeSelection = () => (
+    <main className="entry-shell" aria-label="authentication" data-testid="auth-gate">
+      <div style={{ display: "flex", flexDirection: "column", gap: "2rem", width: "100%", maxWidth: "480px" }}>
+        <section className="entry-card" aria-label="mode selection" data-testid="mode-selection">
+          <div className="mode-choice-grid">
+            <button
+              className="mode-choice mode-choice-primary"
+              type="button"
+              onClick={() => setView("interactive_credentials")}
+              data-testid="mode-interactive"
+            >
+              <span className="mode-choice-title">Interactive</span>
+            </button>
+            <button
+              className="mode-choice mode-choice-secondary"
+              type="button"
+              onClick={() => void enterDisplayMode()}
+              data-testid="mode-display"
+            >
+              <span className="mode-choice-title">Display</span>
+            </button>
+          </div>
+        </section>
+        <LocalAccessQR hidden={isMobileViewport} />
+      </div>
+    </main>
+  );
+
+  const renderCredentials = () => (
+    <main className="entry-shell" aria-label="authentication" data-testid="auth-gate">
+      <section className="surface-card auth-section entry-card" aria-label="authentication">
+        <h2>Staff Sign In</h2>
+        <form className="auth-form" onSubmit={onLogin}>
+          <label>
+            Login
+            <input
+              value={loginValue}
+              onChange={(event) => setLoginValue(event.target.value)}
+              autoComplete="username"
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          <div className="auth-form-actions">
+            <button className="action ghost" type="button" onClick={goBackToLanding}>Back</button>
+            <button className="action" type="submit" disabled={authLoading}>
+              {authLoading ? "Signing in..." : "Sign In"}
+            </button>
+          </div>
+        </form>
+        {authError && <p className="error-text">{authError}</p>}
+      </section>
+    </main>
+  );
+
+  const renderDisplayLoading = () => (
+    <main className="entry-shell">
+      <section className="surface-card entry-card" aria-label="display loading" data-testid="display-loading">
+        <p>Connecting display mode...</p>
+        {displayError && (
+          <>
+            <p className="error-text">{displayError}</p>
+            <button className="action" type="button" onClick={goBackToLanding}>Back</button>
+          </>
+        )}
+      </section>
+    </main>
+  );
+
+  const renderPreBoardShell = (content: JSX.Element) => (
+    <div className="app-container">
+      <header className="app-header">
+        <button
+          className="nav-toggle-btn action ghost"
+          onClick={() => setNavOpen((current) => !current)}
+          aria-label="Toggle Navigation"
+          type="button"
+        >
+          ☰
+        </button>
+        <h3>Restaurant App</h3>
+      </header>
+
+      <div className="app-body">
+        {navOpen && (
+          <nav ref={navRef} className="app-nav">
+            <div className="nav-header">
+              <button
+                className="nav-close-btn action ghost"
+                onClick={() => setNavOpen(false)}
+                type="button"
+                aria-label="Close Navigation"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="nav-links">
+              <button
+                type="button"
+                className={`nav-link ${activeTab === "dashboard" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("dashboard");
+                  if (view !== "landing") {
+                    goBackToLanding();
+                  }
+                }}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                className={`nav-link ${activeTab === "settings" ? "active" : ""}`}
+                onClick={() => setActiveTab("settings")}
+              >
+                Settings
+              </button>
+            </div>
+          </nav>
+        )}
+
+        <main className="app-content-wrapper">
+          {activeTab === "settings" ? (
+            <section className="surface-card settings-view" aria-label="settings">
+              <h2>Settings</h2>
+              <p className="muted">Use text size controls from the navigation menu after entering the staff client.</p>
+            </section>
+          ) : (
+            content
+          )}
+        </main>
+      </div>
+    </div>
+  );
+
   // --- Render ---
 
   // Landing screen
   if (view === "landing") {
-    return (
-      <div className="app-shell">
-        <main>
-          <section className="landing-screen" aria-label="mode selection" data-testid="mode-selection">
-            <div className="landing-actions">
-              <button
-                className="landing-mode-card"
-                type="button"
-                onClick={() => setView("interactive_credentials")}
-                data-testid="mode-interactive"
-              >
-                <span className="landing-mode-title">Interactive</span>
-              </button>
-              <button
-                className="landing-mode-card"
-                type="button"
-                onClick={() => void enterDisplayMode()}
-                data-testid="mode-display"
-              >
-                <span className="landing-mode-title">Display</span>
-              </button>
-            </div>
-          </section>
-        </main>
-      </div>
-    );
+    return renderPreBoardShell(renderModeSelection());
   }
 
   // Interactive credentials screen
   if (view === "interactive_credentials") {
-    return (
-      <div className="app-shell">
-        <main>
-          <section className="surface-card auth-section" aria-label="authentication">
-            <h2>Staff Sign In</h2>
-            <form className="auth-form" onSubmit={onLogin}>
-              <label>
-                Login
-                <input
-                  value={loginValue}
-                  onChange={(event) => setLoginValue(event.target.value)}
-                  autoComplete="username"
-                  required
-                />
-              </label>
-              <label>
-                Password
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
-              </label>
-              <div className="auth-form-actions">
-                <button className="action ghost" type="button" onClick={goBackToLanding}>Back</button>
-                <button className="action" type="submit" disabled={authLoading}>
-                  {authLoading ? "Signing in..." : "Sign In"}
-                </button>
-              </div>
-            </form>
-            {authError && <p className="error-text">{authError}</p>}
-          </section>
-          <LocalAccessQR hidden={false} />
-        </main>
-      </div>
-    );
+    return renderPreBoardShell(renderCredentials());
   }
 
   // Display loading screen
   if (view === "display_loading") {
-    return (
-      <div className="app-shell">
-        <main>
-          <section className="landing-screen" aria-label="display loading" data-testid="display-loading">
-            <p>Connecting display mode...</p>
-            {displayError && (
-              <>
-                <p className="error-text">{displayError}</p>
-                <button className="action" type="button" onClick={goBackToLanding}>Back</button>
-              </>
-            )}
-          </section>
-        </main>
-      </div>
-    );
+    return renderPreBoardShell(renderDisplayLoading());
   }
 
   // Board views (interactive_board and display_board)

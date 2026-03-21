@@ -108,12 +108,16 @@ describe("Staff client — state machine flows", () => {
 
   it("shows landing screen with mode selection when no session exists", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse([])));
+    setViewport(1280);
 
     render(<App />);
 
     expect(screen.getByTestId("mode-selection")).toBeInTheDocument();
     expect(screen.getByTestId("mode-interactive")).toBeInTheDocument();
     expect(screen.getByTestId("mode-display")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Toggle Navigation" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
     expect(screen.queryByTestId("order-list")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Login")).not.toBeInTheDocument();
   });
@@ -122,6 +126,7 @@ describe("Staff client — state machine flows", () => {
 
   it("shows login form after clicking Interactive", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse([])));
+    setViewport(1280);
 
     render(<App />);
 
@@ -668,23 +673,39 @@ describe("Staff client — state machine flows", () => {
     expect(document.documentElement.classList.contains("text-size-3")).toBe(true);
   });
 
-  it("shows QR only on login view and not on dashboard", async () => {
-    setViewport(1280);
+  it("shows orders-client style QR only on the two-button screen and keeps it out of interactive credentials and dashboard", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse([])));
 
-    const loginRender = render(<App />);
+    setViewport(1280);
+    const desktopRender = render(<App />);
+    expect(screen.getByText("Local Network Access")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("mode-interactive"));
     await screen.findByLabelText("Login");
-    expect(screen.getByText("QR Access")).toBeInTheDocument();
+    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
+    desktopRender.unmount();
 
-    loginRender.unmount();
+    setViewport(768);
+    const tabletRender = render(<App />);
+    expect(screen.getByText("Local Network Access")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("mode-interactive"));
+    await screen.findByLabelText("Login");
+    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
+    tabletRender.unmount();
 
+    setViewport(390);
+    const mobileRender = render(<App />);
+    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("mode-interactive"));
+    await screen.findByLabelText("Login");
+    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
+    mobileRender.unmount();
+
+    setViewport(1280);
     setInteractiveSession();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER])));
-
     render(<App />);
     await screen.findByTestId("order-9100");
-    expect(screen.queryByText("QR Access")).not.toBeInTheDocument();
+    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
   });
 
   it("keeps navigation open by default on desktop like orders-client", async () => {

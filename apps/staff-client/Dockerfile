@@ -11,6 +11,8 @@ COPY . .
 # (e.g. "/api/v1/auth/login") and nginx can proxy them.
 ENV VITE_USERS_SERVICE_BASE_URL=""
 ENV VITE_PRODUCTION_SERVICE_BASE_URL=""
+ARG VITE_LOCAL_IP
+ENV VITE_LOCAL_IP=$VITE_LOCAL_IP
 RUN npm run build
 
 # ── Runtime stage ────────────────────────────────────────────

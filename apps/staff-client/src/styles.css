@@ -453,6 +453,59 @@ body {
   justify-content: flex-end;
 }
 
+.entry-shell {
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  min-height: calc(100vh - 4.5rem);
+}
+
+.entry-card {
+  width: min(760px, 100%);
+}
+
+.mode-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.mode-choice {
+  min-height: 220px;
+  border-radius: 34px;
+  padding: 1.6rem;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.8rem;
+  text-align: center;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.mode-choice:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 32px -24px rgba(47, 43, 26, 0.55);
+}
+
+.mode-choice-primary {
+  background: var(--accent);
+  color: #fff;
+  border: 2px solid transparent;
+}
+
+.mode-choice-secondary {
+  background: transparent;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+}
+
+.mode-choice-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
 input {
   width: 100%;
   border: 1px solid #cabd8c;
@@ -582,6 +635,10 @@ html.text-size-3 {
 @media (max-width: 699px) {
   .app-shell {
     padding-inline: 0.85rem;
+  }
+
+  .mode-choice-grid {
+    grid-template-columns: 1fr;
   }
 
   .board-lanes,

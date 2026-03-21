@@ -60,3 +60,26 @@
   - `8. Staff Dashboard - Mobile (Folded)` (390x844)
   - `7. Navigation Menu - Mobile`
 - Noted that Penpot text still contains `Text: A | A+ | A++` in relevant boards, but user retry requirement explicitly overrides this label to `Text size`; implementation follows user requirement.
+
+## Retry-4 Targeted Update (Desktop/Tablet Login QR)
+- Updated `apps/staff-client/src/App.tsx` login-screen QR rendering to use responsive viewport behavior consistent with existing app breakpoints.
+- Added `isMobileViewport` state updated on resize (`< 768` mobile) and passed it to `LocalAccessQR` so QR is:
+  - visible on desktop (`>= 768`)
+  - visible on tablet (`>= 768` threshold behavior used by the app)
+  - hidden on mobile (`< 768`)
+- Kept accepted behavior unchanged:
+  - navigation/header parity remains as implemented
+  - refresh control remains emoji-only in top row
+  - `Text size` label unchanged
+  - logout/exit remains out of top header
+
+## Tests Updated (Retry-4)
+- Updated `apps/staff-client/src/App.test.tsx` QR test to explicitly assert:
+  - desktop login shows QR
+  - tablet login shows QR
+  - mobile login hides QR
+  - dashboard view continues to hide QR
+
+## Validation Summary (Retry-4)
+- `npm run test -- --run` (from `apps/staff-client`): passed (25/25).
+- `npm run build` (from `apps/staff-client`): passed.

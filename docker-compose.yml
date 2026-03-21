@@ -273,6 +273,8 @@ services:
   staff-client:
     build:
       context: ./apps/staff-client
+      args:
+        VITE_LOCAL_IP: ${LOCAL_IP:-}
     container_name: restaurant-staff-client
     ports:
       - "8085:80"

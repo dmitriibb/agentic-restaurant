@@ -63,3 +63,15 @@ completed requested header polish (top container removal, refresh emoji-only con
 
 2026-03-21 11:54:45 - supervisor
 coder polish completed; pipeline paused before tester pending user verification
+
+2026-03-21 12:50:32 - supervisor
+received user request to show QR on login for desktop/tablet only; handing off to coder for targeted responsive update
+
+2026-03-21 12:51:31 - coder
+received targeted UI feedback from supervisor, implementing responsive login QR visibility updates (desktop/tablet show, mobile hide)
+
+2026-03-21 12:52:01 - coder
+completed responsive login QR implementation (desktop/tablet visible, mobile hidden), updated tests, and validated with staff-client test/build; handing off to tester
+
+2026-03-21 12:52:17 - supervisor
+coder QR responsive update completed; pipeline paused before tester pending user verification
