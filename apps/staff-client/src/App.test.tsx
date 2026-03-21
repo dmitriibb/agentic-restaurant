@@ -79,6 +79,11 @@ const SAMPLE_DETAIL = {
 
 const STAFF_USER = { id: 2001, login: "staff1", displayName: "Staff One", clientType: "REGISTERED_USER" };
 
+function setViewport(width: number) {
+  Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: width });
+  window.dispatchEvent(new Event("resize"));
+}
+
 function setInteractiveSession(token = "stored-token", user = STAFF_USER) {
   sessionStorage.setItem("staff-client-auth", JSON.stringify({ mode: "interactive", token, user }));
 }
@@ -96,6 +101,7 @@ describe("Staff client — state machine flows", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     sessionStorage.clear();
+    document.documentElement.className = "";
   });
 
   // ── 7a: Landing screen ──
@@ -620,5 +626,116 @@ describe("Staff client — state machine flows", () => {
     expect(within(screen.getByTestId("lane-IN_PROGRESS")).getByTestId("order-9002")).toBeInTheDocument();
     expect(within(screen.getByTestId("lane-BLOCKED")).getByTestId("order-9003")).toBeInTheDocument();
     expect(within(screen.getByTestId("lane-READY")).getByTestId("order-9004")).toBeInTheDocument();
+  });
+
+  it("toggles lane fold state and keeps accurate header count", async () => {
+    setViewport(1280);
+    setInteractiveSession();
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByTestId("order-9100");
+
+    const queuedToggle = screen.getByTestId("lane-toggle-QUEUED");
+    expect(queuedToggle).toHaveTextContent("QUEUED (1)");
+    expect(queuedToggle).toHaveTextContent("▼");
+
+    fireEvent.click(queuedToggle);
+    expect(queuedToggle).toHaveTextContent("▶");
+    expect(within(screen.getByTestId("lane-QUEUED")).queryByTestId("order-9100")).not.toBeInTheDocument();
+
+    fireEvent.click(queuedToggle);
+    expect(queuedToggle).toHaveTextContent("▼");
+    expect(await within(screen.getByTestId("lane-QUEUED")).findByTestId("order-9100")).toBeInTheDocument();
+  });
+
+  it("applies enlarge text classes from sidebar controls", async () => {
+    setViewport(1280);
+    setInteractiveSession();
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByTestId("text-size-controls");
+    expect(screen.getByText("Text size")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Set text size A++" }));
+
+    expect(document.documentElement.classList.contains("text-size-3")).toBe(true);
+  });
+
+  it("shows QR only on login view and not on dashboard", async () => {
+    setViewport(1280);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse([])));
+
+    const loginRender = render(<App />);
+    fireEvent.click(screen.getByTestId("mode-interactive"));
+    await screen.findByLabelText("Login");
+    expect(screen.getByText("QR Access")).toBeInTheDocument();
+
+    loginRender.unmount();
+
+    setInteractiveSession();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER])));
+
+    render(<App />);
+    await screen.findByTestId("order-9100");
+    expect(screen.queryByText("QR Access")).not.toBeInTheDocument();
+  });
+
+  it("keeps navigation open by default on desktop like orders-client", async () => {
+    setViewport(1280);
+    setInteractiveSession();
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+    await screen.findByTestId("order-9100");
+
+    const navElement = document.querySelector(".app-nav");
+    expect(navElement).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Toggle Navigation" })).toBeInTheDocument();
+  });
+
+  it("uses orders-client style mobile navigation toggle behavior", async () => {
+    setViewport(390);
+    setInteractiveSession();
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+    await screen.findByTestId("order-9100");
+
+    expect(document.querySelector(".app-nav")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle Navigation" }));
+    expect(document.querySelector(".app-nav")).not.toBeNull();
+
+    fireEvent.mouseDown(document.body);
+    await waitFor(() => {
+      expect(document.querySelector(".app-nav")).toBeNull();
+    });
+  });
+
+  it("keeps top toolbar focused on refresh without logout/exit actions", async () => {
+    setViewport(1280);
+    setInteractiveSession();
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+    await screen.findByTestId("order-9100");
+
+    const toolbar = document.querySelector(".app-toolbar") as HTMLElement;
+    expect(within(toolbar).getByRole("button", { name: "Refresh" })).toBeInTheDocument();
+    expect(within(toolbar).queryByRole("button", { name: "Logout" })).not.toBeInTheDocument();
+    expect(within(toolbar).queryByRole("button", { name: "Exit" })).not.toBeInTheDocument();
   });
 });

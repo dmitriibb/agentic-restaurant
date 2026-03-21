@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { login, type UserSummary } from "./features/auth/api";
 import { getDisplayToken, clearDisplayToken } from "./features/auth/appToken";
 import {
@@ -38,12 +39,26 @@ const LANE_DEFINITIONS = [
   { status: STATUS_READY, label: "Ready" },
 ] as const;
 
+const TEXT_SIZE_STORAGE_KEY = "staff-client-text-size";
+
+type TextSize = 1 | 2 | 3;
+
 type AppView =
   | "landing"
   | "interactive_credentials"
   | "display_loading"
   | "interactive_board"
   | "display_board";
+function readInitialTextSize(): TextSize {
+  if (typeof window === "undefined") {
+    return 1;
+  }
+  const raw = window.localStorage.getItem(TEXT_SIZE_STORAGE_KEY);
+  if (raw === "2" || raw === "3") {
+    return Number(raw) as TextSize;
+  }
+  return 1;
+}
 
 function computeInitialState(): { view: AppView; session: UiSession | null } {
   const persisted = readPersistedSession();
@@ -156,6 +171,38 @@ function sortOrdersForLane(
   );
 }
 
+function LocalAccessQR({ hidden }: { hidden: boolean }) {
+  if (hidden) {
+    return null;
+  }
+
+  const localIp = import.meta.env.VITE_LOCAL_IP || "";
+  const isLocalHost =
+    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const host = isLocalHost ? localIp : window.location.hostname;
+
+  if (!host) {
+    return (
+      <section className="surface-card qr-card" aria-label="local access qr">
+        <h3>QR Access</h3>
+        <p className="muted">Set VITE_LOCAL_IP to generate local access QR code.</p>
+      </section>
+    );
+  }
+
+  const url = `${window.location.protocol}//${host}${window.location.port ? `:${window.location.port}` : ""}`;
+
+  return (
+    <section className="surface-card qr-card" aria-label="local access qr">
+      <h3>QR Access</h3>
+      <div className="qr-box">
+        <QRCodeSVG value={url} size={126} />
+      </div>
+      <p className="muted qr-url">{url}</p>
+    </section>
+  );
+}
+
 export function App() {
   const initial = computeInitialState();
 
@@ -185,6 +232,52 @@ export function App() {
   // Command state
   const [commandLoading, setCommandLoading] = useState<string | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
+
+  // UI controls
+  const [textSize, setTextSize] = useState<TextSize>(readInitialTextSize());
+  const [navOpen, setNavOpen] = useState(window.innerWidth >= 768);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "settings">("dashboard");
+  const navRef = useRef<HTMLElement | null>(null);
+  const [collapsedLanes, setCollapsedLanes] = useState<Record<string, boolean>>({
+    [STATUS_QUEUED]: false,
+    [STATUS_IN_PROGRESS]: false,
+    [STATUS_BLOCKED]: false,
+    [STATUS_READY]: false,
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(TEXT_SIZE_STORAGE_KEY, String(textSize));
+    const root = document.documentElement;
+    root.classList.remove("text-size-1", "text-size-2", "text-size-3");
+    root.classList.add(`text-size-${textSize}`);
+  }, [textSize]);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 768) {
+        setNavOpen(true);
+      } else {
+        setNavOpen(false);
+      }
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (window.innerWidth >= 768 || !navOpen || !navRef.current) {
+        return;
+      }
+      const target = event.target as Element;
+      if (!navRef.current.contains(target) && !target.closest(".nav-toggle-btn")) {
+        setNavOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [navOpen]);
 
   // --- Display mode token acquisition ---
 
@@ -265,6 +358,18 @@ export function App() {
     setAuthError(null);
     setDisplayError(null);
     setView("landing");
+    setActiveTab("dashboard");
+  }
+
+  function setSize(size: TextSize) {
+    setTextSize(size);
+  }
+
+  function toggleLane(status: string) {
+    setCollapsedLanes((previous) => ({
+      ...previous,
+      [status]: !previous[status],
+    }));
   }
 
   // --- Board loading ---
@@ -405,6 +510,7 @@ export function App() {
             </form>
             {authError && <p className="error-text">{authError}</p>}
           </section>
+          <LocalAccessQR hidden={false} />
         </main>
       </div>
     );
@@ -434,98 +540,175 @@ export function App() {
   const currentOrders: (ProductionOrder | DisplayOrder)[] = isDisplay ? displayOrders : orders;
   const hasOrders = currentOrders.length > 0;
 
-  return (
-    <div className="app-shell">
-      <div className="app-toolbar">
-        {session && (
-          <span className="mode-chip" data-testid="mode-chip">
-            Mode: {session.mode}
-          </span>
-        )}
-        {!isDisplay && session?.user && (
-          <span className="auth-info" data-testid="auth-status">
-            Signed in as <strong>{displayUserName(session.user)}</strong>
-          </span>
-        )}
+  function renderLane(status: string, label: string, laneOrders: (ProductionOrder | DisplayOrder)[]) {
+    const collapsed = Boolean(collapsedLanes[status]);
+    return (
+      <section className={`lane${collapsed ? " lane-collapsed" : ""}`} key={status} data-testid={`lane-${status}`}>
         <button
-          className="action"
           type="button"
-          onClick={() => session && void loadBoard(session.accessToken, session.mode as "interactive" | "display")}
-          disabled={boardLoading}
+          className={`${laneHeaderClass(status)} lane-header-toggle`}
+          onClick={() => toggleLane(status)}
+          aria-expanded={!collapsed}
+          data-testid={`lane-toggle-${status}`}
         >
-          Refresh
+          <span>{label.toUpperCase()} ({laneOrders.length})</span>
+          <span className="lane-toggle-indicator" aria-hidden="true">{collapsed ? "▶" : "▼"}</span>
         </button>
-        {!isDisplay ? (
-          <button className="action ghost" type="button" onClick={resetAllState}>
-            Logout
-          </button>
-        ) : (
-          <button className="action ghost" type="button" onClick={resetAllState}>
-            Exit
-          </button>
-        )}
-      </div>
 
-      <main>
+        {!collapsed &&
+          laneOrders.map((order) => {
+            if (isDisplay) {
+              return (
+                <div key={order.OrderID} className="order-card" data-testid={`order-${order.OrderID}`}>
+                  <div className="order-card-header">
+                    <strong>Order #{order.OrderID}</strong>
+                  </div>
+                  {renderEmojiSummary(order.ItemStatusCounts)}
+                  <p className="muted">{formatTime(order.CreatedAt)}</p>
+                </div>
+              );
+            }
+
+            const productionOrder = order as ProductionOrder;
+            return (
+              <button
+                key={order.OrderID}
+                type="button"
+                className={`order-card${selectedOrderId === order.OrderID ? " selected" : ""}`}
+                onClick={() => void loadDetail(order.OrderID)}
+                data-testid={`order-${order.OrderID}`}
+              >
+                <div className="order-card-header">
+                  <strong>Order #{order.OrderID}</strong>
+                </div>
+                <p className="muted">
+                  {productionOrder.UserDisplayName ?? `User #${productionOrder.UserID}`}
+                </p>
+                {renderEmojiSummary(order.ItemStatusCounts)}
+                <p className="muted">{formatTime(order.CreatedAt)}</p>
+              </button>
+            );
+          })}
+      </section>
+    );
+  }
+
+  return (
+    <div className="app-container">
+      <header className="app-header">
+        <button
+          className="nav-toggle-btn action ghost"
+          onClick={() => setNavOpen((current) => !current)}
+          aria-label="Toggle Navigation"
+          type="button"
+        >
+          ☰
+        </button>
+        <h3>Staff Client</h3>
+      </header>
+
+      <div className="app-body">
+        {navOpen && (
+          <nav ref={navRef} className="app-nav">
+            <div className="nav-header">
+              <button
+                className="nav-close-btn action ghost"
+                onClick={() => setNavOpen(false)}
+                type="button"
+                aria-label="Close Navigation"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="nav-links">
+              <button
+                type="button"
+                className={`nav-link ${activeTab === "dashboard" ? "active" : ""}`}
+                onClick={() => setActiveTab("dashboard")}
+              >
+                Dashboard
+              </button>
+              <button
+                type="button"
+                className={`nav-link ${activeTab === "settings" ? "active" : ""}`}
+                onClick={() => setActiveTab("settings")}
+              >
+                Settings
+              </button>
+            </div>
+
+            <div className="nav-footer" data-testid="text-size-controls">
+              <p className="muted">Text size</p>
+              <div className="text-size-actions">
+                <button className={`action ghost${textSize === 1 ? " active-size" : ""}`} type="button" onClick={() => setSize(1)} aria-label="Set text size A">A</button>
+                <button className={`action ghost${textSize === 2 ? " active-size" : ""}`} type="button" onClick={() => setSize(2)} aria-label="Set text size A+">A+</button>
+                <button className={`action ghost${textSize === 3 ? " active-size" : ""}`} type="button" onClick={() => setSize(3)} aria-label="Set text size A++">A++</button>
+              </div>
+              {!isDisplay ? (
+                <button className="action ghost" type="button" onClick={resetAllState} aria-label="Logout" title="Logout">
+                  Logout
+                </button>
+              ) : (
+                <button className="action ghost" type="button" onClick={resetAllState} aria-label="Exit" title="Exit">
+                  Exit
+                </button>
+              )}
+            </div>
+          </nav>
+        )}
+
+        <main className="app-content-wrapper">
+          <div className="app-toolbar">
+            <div className="toolbar-left" />
+            <div className="toolbar-right">
+              {session && (
+                <span className="mode-chip" data-testid="mode-chip">
+                  Mode: {session.mode}
+                </span>
+              )}
+              {!isDisplay && session?.user && (
+                <span className="auth-info" data-testid="auth-status">
+                  Signed in as <strong>{displayUserName(session.user)}</strong>
+                </span>
+              )}
+              <button
+                className="refresh-control"
+                type="button"
+                onClick={() => session && void loadBoard(session.accessToken, session.mode as "interactive" | "display")}
+                disabled={boardLoading}
+                aria-label="Refresh"
+                title="Refresh"
+              >
+                🔄
+              </button>
+            </div>
+          </div>
+
+          {activeTab === "settings" ? (
+            <section className="surface-card settings-view" aria-label="settings">
+              <h2>Settings</h2>
+              <p className="muted">Use text size controls and local QR access from the navigation menu.</p>
+            </section>
+          ) : (
+            <>
         {boardLoading && !hasOrders && <p className="muted">Loading orders...</p>}
         {boardError && <p className="error-text">{boardError}</p>}
 
         {isDisplay ? (
-          /* Display board: four lane columns, read-only, no detail rail */
+          /* Display board: foldable lane columns, read-only */
           <div className="board-lanes" data-testid="order-list">
             {LANE_DEFINITIONS.map(({ status, label }) => {
               const laneOrders = sortOrdersForLane(currentOrders, status);
-              return (
-                <div className="lane" key={status} data-testid={`lane-${status}`}>
-                  <h3 className={laneHeaderClass(status)}>{label}</h3>
-                  {laneOrders.map((order) => (
-                    <div
-                      key={order.OrderID}
-                      className="order-card"
-                      data-testid={`order-${order.OrderID}`}
-                    >
-                      <div className="order-card-header">
-                        <strong>Order #{order.OrderID}</strong>
-                      </div>
-                      {renderEmojiSummary(order.ItemStatusCounts)}
-                      <p className="muted">{formatTime(order.CreatedAt)}</p>
-                    </div>
-                  ))}
-                </div>
-              );
+              return renderLane(status, label, laneOrders);
             })}
           </div>
         ) : (
-          /* Interactive board: four lane columns + detail rail */
+          /* Interactive board: foldable lane columns + detail rail */
           <div className="board-lanes-with-detail" data-testid="order-list">
             {LANE_DEFINITIONS.map(({ status, label }) => {
               const laneOrders = sortOrdersForLane(orders, status);
-              return (
-                <div className="lane" key={status} data-testid={`lane-${status}`}>
-                  <h3 className={laneHeaderClass(status)}>{label}</h3>
-                  {laneOrders.map((order) => {
-                    const productionOrder = order as ProductionOrder;
-                    return (
-                      <button
-                        key={order.OrderID}
-                        type="button"
-                        className={`order-card${selectedOrderId === order.OrderID ? " selected" : ""}`}
-                        onClick={() => void loadDetail(order.OrderID)}
-                        data-testid={`order-${order.OrderID}`}
-                      >
-                        <div className="order-card-header">
-                          <strong>Order #{order.OrderID}</strong>
-                        </div>
-                        <p className="muted">
-                          {productionOrder.UserDisplayName ?? `User #${productionOrder.UserID}`}
-                        </p>
-                        {renderEmojiSummary(order.ItemStatusCounts)}
-                        <p className="muted">{formatTime(order.CreatedAt)}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              );
+              return renderLane(status, label, laneOrders);
             })}
 
             <section className="detail-panel" aria-label="order detail" data-testid="order-detail">
@@ -595,7 +778,10 @@ export function App() {
         {!boardLoading && !hasOrders && !boardError && (
           <p className="muted">No production orders.</p>
         )}
-      </main>
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

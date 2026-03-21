@@ -4,12 +4,12 @@
 id: task-024-implement-staff-client-ui
 title: Implement the redesigned UI inside Staff Client App
 pipeline: implementation
-status: queued
+status: implementing
 priority: medium
 type: feature
 architecture: not_requested
 source_architecture: ""
-retry_count: 0
+retry_count: 2
 created_at: 2026-03-20
 requested_by: human
 areas:
