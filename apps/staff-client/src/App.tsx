@@ -1,33 +1,46 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  ActionButton,
+  AppNavigationMenu,
+  AppShell,
+  ChoiceCard,
+  FormTextField,
+  InfoCard,
+  StatusBadge,
+  TextSizeControl,
+  type AppNavigationMenuItem,
+  type StatusBadgeTone,
+  type TextSizeValue,
+} from "@agentic-restaurant/ui-common-libs";
+import { useEffect, useState, type FormEvent } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { login, type UserSummary } from "./features/auth/api";
-import { getDisplayToken, clearDisplayToken } from "./features/auth/appToken";
+import { clearDisplayToken, getDisplayToken } from "./features/auth/appToken";
 import {
-  readPersistedSession,
-  writeInteractiveSession,
-  writeDisplaySession,
   clearSession,
+  readPersistedSession,
+  writeDisplaySession,
+  writeInteractiveSession,
   type UiSession,
 } from "./features/auth/session";
 import {
-  fetchOrders,
   fetchDisplayOrders,
   fetchOrderDetail,
+  fetchOrders,
   sendItemCommand,
 } from "./features/production/api";
+import {
+  STATUS_BLOCKED,
+  STATUS_IN_PROGRESS,
+  STATUS_QUEUED,
+  STATUS_READY,
+} from "./features/production/types";
 import type {
-  ProductionOrder,
   DisplayOrder,
-  ProductionItem,
-  OrderDetail,
   ItemCommand,
   ItemStatusCounts,
-} from "./features/production/types";
-import {
-  STATUS_QUEUED,
-  STATUS_IN_PROGRESS,
-  STATUS_BLOCKED,
-  STATUS_READY,
+  OrderDetail,
+  ProductionItem,
+  ProductionOrder,
 } from "./features/production/types";
 
 const POLL_INTERVAL_MS = 5000;
@@ -41,7 +54,7 @@ const LANE_DEFINITIONS = [
 
 const TEXT_SIZE_STORAGE_KEY = "staff-client-text-size";
 
-type TextSize = 1 | 2 | 3;
+type TextSize = TextSizeValue;
 
 type AppView =
   | "landing"
@@ -49,14 +62,17 @@ type AppView =
   | "display_loading"
   | "interactive_board"
   | "display_board";
+
 function readInitialTextSize(): TextSize {
   if (typeof window === "undefined") {
     return 1;
   }
+
   const raw = window.localStorage.getItem(TEXT_SIZE_STORAGE_KEY);
   if (raw === "2" || raw === "3") {
     return Number(raw) as TextSize;
   }
+
   return 1;
 }
 
@@ -65,6 +81,7 @@ function computeInitialState(): { view: AppView; session: UiSession | null } {
   if (!persisted) {
     return { view: "landing", session: null };
   }
+
   if (persisted.mode === "interactive") {
     return {
       view: "interactive_board",
@@ -76,7 +93,7 @@ function computeInitialState(): { view: AppView; session: UiSession | null } {
       },
     };
   }
-  // display mode: need to reacquire token
+
   return { view: "display_loading", session: null };
 }
 
@@ -92,6 +109,23 @@ function formatTime(iso: string): string {
   }
 }
 
+function statusLabel(status: string): string {
+  return status.replace(/_/g, " ");
+}
+
+function statusTone(status: string): StatusBadgeTone {
+  switch (status) {
+    case STATUS_IN_PROGRESS:
+      return "info";
+    case STATUS_BLOCKED:
+      return "warning";
+    case STATUS_READY:
+      return "success";
+    default:
+      return "neutral";
+  }
+}
+
 function getAllowedActions(item: ProductionItem): ItemCommand[] {
   switch (item.Status) {
     case STATUS_QUEUED:
@@ -102,21 +136,6 @@ function getAllowedActions(item: ProductionItem): ItemCommand[] {
       return ["resume"];
     default:
       return [];
-  }
-}
-
-function statusBadgeClass(status: string): string {
-  switch (status) {
-    case STATUS_QUEUED:
-      return "status-badge queued";
-    case STATUS_IN_PROGRESS:
-      return "status-badge in-progress";
-    case STATUS_BLOCKED:
-      return "status-badge blocked";
-    case STATUS_READY:
-      return "status-badge ready";
-    default:
-      return "status-badge";
   }
 }
 
@@ -135,7 +154,7 @@ function laneHeaderClass(status: string): string {
   }
 }
 
-function renderEmojiSummary(counts: ItemStatusCounts): JSX.Element {
+function renderEmojiSummary(counts: ItemStatusCounts) {
   return (
     <div className="emoji-summary" role="group" aria-label="item status summary">
       <span className="emoji-chip" aria-label={`${counts.Queued} queued`}>
@@ -156,18 +175,17 @@ function renderEmojiSummary(counts: ItemStatusCounts): JSX.Element {
 
 function sortOrdersForLane(
   orders: (ProductionOrder | DisplayOrder)[],
-  status: string
+  status: string,
 ): (ProductionOrder | DisplayOrder)[] {
-  const filtered = orders.filter((o) => o.Status === status);
+  const filtered = orders.filter((order) => order.Status === status);
   if (status === STATUS_READY) {
-    // Most recently updated first
     return [...filtered].sort(
-      (a, b) => new Date(b.UpdatedAt).getTime() - new Date(a.UpdatedAt).getTime()
+      (left, right) => new Date(right.UpdatedAt).getTime() - new Date(left.UpdatedAt).getTime(),
     );
   }
-  // Oldest first
+
   return [...filtered].sort(
-    (a, b) => new Date(a.CreatedAt).getTime() - new Date(b.CreatedAt).getTime()
+    (left, right) => new Date(left.CreatedAt).getTime() - new Date(right.CreatedAt).getTime(),
   );
 }
 
@@ -178,7 +196,8 @@ function LocalAccessQR({ hidden }: { hidden: boolean }) {
 
   const defaultIp = import.meta.env.VITE_LOCAL_IP || "";
   const [ipValue, setIpValue] = useState(defaultIp);
-  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const isLocalhost =
+    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
   useEffect(() => {
     if (!isLocalhost) {
@@ -186,79 +205,75 @@ function LocalAccessQR({ hidden }: { hidden: boolean }) {
     } else if (defaultIp && !ipValue) {
       setIpValue(defaultIp);
     }
-  }, [isLocalhost, defaultIp, ipValue]);
+  }, [defaultIp, ipValue, isLocalhost]);
 
-  const displayUrl = ipValue ? `${window.location.protocol}//${ipValue}${window.location.port ? `:${window.location.port}` : ""}` : "";
+  const displayUrl = ipValue
+    ? `${window.location.protocol}//${ipValue}${window.location.port ? `:${window.location.port}` : ""}`
+    : "";
 
   return (
-    <div className="qr-container surface-card" style={{ marginTop: "2rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <p style={{ marginBottom: "1rem" }}><strong>Local Network Access</strong></p>
+    <InfoCard
+      title="Local Network Access"
+      description="Generate a QR code so kitchen devices on your local network can open this client."
+    >
       {ipValue ? (
         <>
-          <div style={{ background: "white", padding: "10px", borderRadius: "8px" }}>
+          <div className="qr-box">
             <QRCodeSVG value={displayUrl} size={150} />
           </div>
-          <p className="muted" style={{ marginTop: "1rem", wordBreak: "break-all" }}>{displayUrl}</p>
-          {isLocalhost && (
-            <button className="action ghost" style={{ marginTop: "0.5rem" }} onClick={() => setIpValue("")} type="button">Edit IP</button>
-          )}
+          <p className="muted qr-url">{displayUrl}</p>
+          {isLocalhost ? (
+            <ActionButton tone="neutral" variant="outlined" type="button" onClick={() => setIpValue("")}>
+              Edit IP
+            </ActionButton>
+          ) : null}
         </>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
-          <p className="muted">Enter your local IP (e.g. 192.168.1.100) to generate a QR code for mobile testing.</p>
-          <input
-            type="text"
-            placeholder="e.g. 192.168.1.100"
-            style={{ padding: "0.5rem", textAlign: "center" }}
+        <div className="qr-edit">
+          <p className="muted">
+            Enter your local IP, for example 192.168.1.100, to generate a QR code for mobile testing.
+          </p>
+          <FormTextField
+            label="Local IP"
+            placeholder="192.168.1.100"
+            defaultValue={defaultIp}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
-                setIpValue(event.currentTarget.value);
+                const input = event.target as HTMLInputElement;
+                setIpValue(input.value);
               }
             }}
-            onBlur={(event) => setIpValue(event.currentTarget.value)}
+            onBlur={(event) => setIpValue(event.target.value)}
           />
         </div>
       )}
-    </div>
+    </InfoCard>
   );
 }
 
 export function App() {
   const initial = computeInitialState();
 
-  // View state machine
   const [view, setView] = useState<AppView>(initial.view);
   const [session, setSession] = useState<UiSession | null>(initial.session);
   const [displayError, setDisplayError] = useState<string | null>(null);
-
-  // Auth form state
   const [loginValue, setLoginValue] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
-
-  // Board state
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
   const [displayOrders, setDisplayOrders] = useState<DisplayOrder[]>([]);
   const [boardLoading, setBoardLoading] = useState(false);
   const [boardError, setBoardError] = useState<string | null>(null);
-
-  // Detail state
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
-
-  // Command state
   const [commandLoading, setCommandLoading] = useState<string | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
-
-  // UI controls
   const [textSize, setTextSize] = useState<TextSize>(readInitialTextSize());
   const [isMobileViewport, setIsMobileViewport] = useState(window.innerWidth < 768);
-  const [navOpen, setNavOpen] = useState(window.innerWidth >= 768);
   const [activeTab, setActiveTab] = useState<"dashboard" | "settings">("dashboard");
-  const navRef = useRef<HTMLElement | null>(null);
   const [collapsedLanes, setCollapsedLanes] = useState<Record<string, boolean>>({
     [STATUS_QUEUED]: false,
     [STATUS_IN_PROGRESS]: false,
@@ -274,62 +289,34 @@ export function App() {
   }, [textSize]);
 
   useEffect(() => {
-    const onResize = () => {
-      setIsMobileViewport(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setNavOpen(true);
-      } else {
-        setNavOpen(false);
-      }
-    };
+    const onResize = () => setIsMobileViewport(window.innerWidth < 768);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (window.innerWidth >= 768 || !navOpen || !navRef.current) {
-        return;
-      }
-      const target = event.target as Element;
-      if (!navRef.current.contains(target) && !target.closest(".nav-toggle-btn")) {
-        setNavOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [navOpen]);
-
-  // --- Display mode token acquisition ---
 
   async function enterDisplayMode() {
     setView("display_loading");
     setDisplayError(null);
     try {
       const token = await getDisplayToken();
-      const newSession: UiSession = {
+      const nextSession: UiSession = {
         mode: "display",
         authKind: "application",
         accessToken: token,
       };
       writeDisplaySession();
-      setSession(newSession);
+      setSession(nextSession);
       setView("display_board");
     } catch (error) {
       setDisplayError(error instanceof Error ? error.message : "Failed to connect display mode.");
     }
   }
 
-  // Auto-enter display mode on reload with persisted display session
   useEffect(() => {
     if (view === "display_loading" && !session) {
       void enterDisplayMode();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // --- Interactive login ---
+  }, [session, view]);
 
   async function onLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -337,14 +324,14 @@ export function App() {
     setAuthError(null);
     try {
       const response = await login(loginValue, password);
-      const newSession: UiSession = {
+      const nextSession: UiSession = {
         mode: "interactive",
         authKind: "user",
         accessToken: response.accessToken,
         user: response.user,
       };
       writeInteractiveSession(response.accessToken, response.user);
-      setSession(newSession);
+      setSession(nextSession);
       setView("interactive_board");
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Login failed.");
@@ -352,8 +339,6 @@ export function App() {
       setAuthLoading(false);
     }
   }
-
-  // --- Navigation helpers ---
 
   function goBackToLanding() {
     setLoginValue("");
@@ -383,10 +368,6 @@ export function App() {
     setActiveTab("dashboard");
   }
 
-  function setSize(size: TextSize) {
-    setTextSize(size);
-  }
-
   function toggleLane(status: string) {
     setCollapsedLanes((previous) => ({
       ...previous,
@@ -394,18 +375,14 @@ export function App() {
     }));
   }
 
-  // --- Board loading ---
-
   async function loadBoard(currentToken: string, mode: "interactive" | "display") {
     setBoardLoading(true);
     setBoardError(null);
     try {
       if (mode === "display") {
-        const data = await fetchDisplayOrders(currentToken);
-        setDisplayOrders(data);
+        setDisplayOrders(await fetchDisplayOrders(currentToken));
       } else {
-        const data = await fetchOrders(currentToken);
-        setOrders(data);
+        setOrders(await fetchOrders(currentToken));
       }
     } catch (error) {
       setBoardError(error instanceof Error ? error.message : "Failed to load board.");
@@ -414,17 +391,17 @@ export function App() {
     }
   }
 
-  // --- Detail loading (interactive only) ---
-
   async function loadDetail(orderId: number) {
-    if (!session) return;
+    if (!session) {
+      return;
+    }
+
     setSelectedOrderId(orderId);
     setDetailLoading(true);
     setDetailError(null);
     setCommandError(null);
     try {
-      const data = await fetchOrderDetail(session.accessToken, orderId);
-      setOrderDetail(data);
+      setOrderDetail(await fetchOrderDetail(session.accessToken, orderId));
     } catch (error) {
       setDetailError(error instanceof Error ? error.message : "Failed to load order.");
     } finally {
@@ -432,14 +409,15 @@ export function App() {
     }
   }
 
-  // --- Item command (interactive only) ---
+  async function onItemCommand(itemId: string, command: ItemCommand) {
+    if (!session || !selectedOrderId) {
+      return;
+    }
 
-  async function onItemCommand(itemId: string, command: ItemCommand, reason?: string) {
-    if (!session || !selectedOrderId) return;
     setCommandLoading(itemId);
     setCommandError(null);
     try {
-      await sendItemCommand(session.accessToken, itemId, command, { reason });
+      await sendItemCommand(session.accessToken, itemId, command, {});
       await loadDetail(selectedOrderId);
       await loadBoard(session.accessToken, session.mode as "interactive" | "display");
     } catch (error) {
@@ -449,188 +427,160 @@ export function App() {
     }
   }
 
-  // --- Auto-load board on session established ---
-
   const isBoardView = view === "interactive_board" || view === "display_board";
 
   useEffect(() => {
-    if (!isBoardView || !session) return;
+    if (!isBoardView || !session) {
+      return;
+    }
+
     const mode = session.mode as "interactive" | "display";
     void loadBoard(session.accessToken, mode);
     const interval = setInterval(() => {
       void loadBoard(session.accessToken, mode);
     }, POLL_INTERVAL_MS);
+
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBoardView, session?.accessToken]);
 
-  const renderModeSelection = () => (
-    <main className="entry-shell" aria-label="authentication" data-testid="auth-gate">
-      <div style={{ display: "flex", flexDirection: "column", gap: "2rem", width: "100%", maxWidth: "480px" }}>
-        <section className="entry-card" aria-label="mode selection" data-testid="mode-selection">
-          <div className="mode-choice-grid">
-            <button
-              className="mode-choice mode-choice-primary"
-              type="button"
-              onClick={() => setView("interactive_credentials")}
-              data-testid="mode-interactive"
-            >
-              <span className="mode-choice-title">Interactive</span>
-            </button>
-            <button
-              className="mode-choice mode-choice-secondary"
-              type="button"
-              onClick={() => void enterDisplayMode()}
-              data-testid="mode-display"
-            >
-              <span className="mode-choice-title">Display</span>
-            </button>
-          </div>
-        </section>
-        <LocalAccessQR hidden={isMobileViewport} />
-      </div>
-    </main>
-  );
-
-  const renderCredentials = () => (
-    <main className="entry-shell" aria-label="authentication" data-testid="auth-gate">
-      <section className="surface-card auth-section entry-card" aria-label="authentication">
-        <h2>Staff Sign In</h2>
-        <form className="auth-form" onSubmit={onLogin}>
-          <label>
-            Login
-            <input
-              value={loginValue}
-              onChange={(event) => setLoginValue(event.target.value)}
-              autoComplete="username"
-              required
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </label>
-          <div className="auth-form-actions">
-            <button className="action ghost" type="button" onClick={goBackToLanding}>Back</button>
-            <button className="action" type="submit" disabled={authLoading}>
-              {authLoading ? "Signing in..." : "Sign In"}
-            </button>
-          </div>
-        </form>
-        {authError && <p className="error-text">{authError}</p>}
-      </section>
-    </main>
-  );
-
-  const renderDisplayLoading = () => (
-    <main className="entry-shell">
-      <section className="surface-card entry-card" aria-label="display loading" data-testid="display-loading">
-        <p>Connecting display mode...</p>
-        {displayError && (
-          <>
-            <p className="error-text">{displayError}</p>
-            <button className="action" type="button" onClick={goBackToLanding}>Back</button>
-          </>
-        )}
-      </section>
-    </main>
-  );
-
-  const renderPreBoardShell = (content: JSX.Element) => (
-    <div className="app-container">
-      <header className="app-header">
-        <button
-          className="nav-toggle-btn action ghost"
-          onClick={() => setNavOpen((current) => !current)}
-          aria-label="Toggle Navigation"
-          type="button"
-        >
-          ☰
-        </button>
-        <h3>Restaurant App</h3>
-      </header>
-
-      <div className="app-body">
-        {navOpen && (
-          <nav ref={navRef} className="app-nav">
-            <div className="nav-header">
-              <button
-                className="nav-close-btn action ghost"
-                onClick={() => setNavOpen(false)}
-                type="button"
-                aria-label="Close Navigation"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="nav-links">
-              <button
-                type="button"
-                className={`nav-link ${activeTab === "dashboard" ? "active" : ""}`}
-                onClick={() => {
-                  setActiveTab("dashboard");
-                  if (view !== "landing") {
-                    goBackToLanding();
-                  }
-                }}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                className={`nav-link ${activeTab === "settings" ? "active" : ""}`}
-                onClick={() => setActiveTab("settings")}
-              >
-                Settings
-              </button>
-            </div>
-          </nav>
-        )}
-
-        <main className="app-content-wrapper">
-          {activeTab === "settings" ? (
-            <section className="surface-card settings-view" aria-label="settings">
-              <h2>Settings</h2>
-              <p className="muted">Use text size controls from the navigation menu after entering the staff client.</p>
-            </section>
-          ) : (
-            content
-          )}
-        </main>
-      </div>
-    </div>
-  );
-
-  // --- Render ---
-
-  // Landing screen
-  if (view === "landing") {
-    return renderPreBoardShell(renderModeSelection());
-  }
-
-  // Interactive credentials screen
-  if (view === "interactive_credentials") {
-    return renderPreBoardShell(renderCredentials());
-  }
-
-  // Display loading screen
-  if (view === "display_loading") {
-    return renderPreBoardShell(renderDisplayLoading());
-  }
-
-  // Board views (interactive_board and display_board)
   const isDisplay = view === "display_board";
   const currentOrders: (ProductionOrder | DisplayOrder)[] = isDisplay ? displayOrders : orders;
   const hasOrders = currentOrders.length > 0;
+  const dashboardLabel = isBoardView ? "Dashboard" : "Login";
+
+  const navigationItems: AppNavigationMenuItem[] = [
+    {
+      id: "dashboard",
+      label: dashboardLabel,
+      active: activeTab === "dashboard",
+      onClick: () => {
+        setActiveTab("dashboard");
+        if (!isBoardView && view !== "landing") {
+          goBackToLanding();
+        }
+      },
+    },
+    {
+      id: "settings",
+      label: "Settings",
+      active: activeTab === "settings",
+      onClick: () => setActiveTab("settings"),
+    },
+  ];
+
+  function renderModeSelection() {
+    return (
+      <section className="entry-shell" aria-label="authentication" data-testid="auth-gate">
+        <div className="entry-stack">
+          <section className="entry-card" aria-label="mode selection" data-testid="mode-selection">
+            <div className="mode-choice-grid">
+              <ChoiceCard
+                title="Interactive"
+                description="Sign in with a staff account to manage the production board."
+                tone="primary"
+                onClick={() => setView("interactive_credentials")}
+                testId="mode-interactive"
+              />
+              <ChoiceCard
+                title="Display"
+                description="Open the read-only board for kitchen and service displays."
+                tone="secondary"
+                onClick={() => {
+                  setDisplayError(null);
+                  setView("display_loading");
+                }}
+                testId="mode-display"
+              />
+            </div>
+          </section>
+          <LocalAccessQR hidden={isMobileViewport} />
+        </div>
+      </section>
+    );
+  }
+
+  function renderCredentials() {
+    return (
+      <section className="entry-shell" aria-label="authentication" data-testid="auth-gate">
+        <div className="entry-card auth-card">
+          <InfoCard title="Staff Sign In" description="Use your staff credentials to access the interactive production board.">
+            <form className="auth-form" onSubmit={onLogin}>
+              <FormTextField
+                label="Login"
+                value={loginValue}
+                onChange={(event) => setLoginValue(event.target.value)}
+                autoComplete="username"
+                required
+              />
+              <FormTextField
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <div className="auth-form-actions">
+                <ActionButton tone="neutral" variant="outlined" type="button" onClick={goBackToLanding}>
+                  Back
+                </ActionButton>
+                <ActionButton type="submit" disabled={authLoading}>
+                  {authLoading ? "Signing in..." : "Sign In"}
+                </ActionButton>
+              </div>
+            </form>
+            {authError ? <p className="error-text">{authError}</p> : null}
+          </InfoCard>
+        </div>
+      </section>
+    );
+  }
+
+  function renderDisplayLoading() {
+    return (
+      <section className="entry-shell">
+        <div className="entry-card">
+          <InfoCard
+            title="Connecting display mode"
+            description="Requesting the application token for the display board."
+          >
+            <div data-testid="display-loading">
+              <p className="muted">Connecting display mode...</p>
+            </div>
+            {displayError ? (
+              <>
+                <p className="error-text">{displayError}</p>
+                <ActionButton type="button" onClick={goBackToLanding}>
+                  Back
+                </ActionButton>
+              </>
+            ) : null}
+          </InfoCard>
+        </div>
+      </section>
+    );
+  }
+
+  function renderSettingsView() {
+    return (
+      <section className="settings-view" aria-label="settings">
+        <InfoCard title="Settings" description="Shared UI controls for readability and device setup.">
+          <TextSizeControl value={textSize} onChange={setTextSize} />
+          {!isBoardView ? (
+            <p className="muted">Choose a workspace mode from the dashboard when you are ready.</p>
+          ) : (
+            <p className="muted">
+              These controls use the same shared components that will be reused across other web apps.
+            </p>
+          )}
+        </InfoCard>
+      </section>
+    );
+  }
 
   function renderLane(status: string, label: string, laneOrders: (ProductionOrder | DisplayOrder)[]) {
     const collapsed = Boolean(collapsedLanes[status]);
+
     return (
       <section className={`lane${collapsed ? " lane-collapsed" : ""}`} key={status} data-testid={`lane-${status}`}>
         <button
@@ -640,237 +590,241 @@ export function App() {
           aria-expanded={!collapsed}
           data-testid={`lane-toggle-${status}`}
         >
-          <span>{label.toUpperCase()} ({laneOrders.length})</span>
-          <span className="lane-toggle-indicator" aria-hidden="true">{collapsed ? "▶" : "▼"}</span>
+          <span>
+            {label.toUpperCase()} ({laneOrders.length})
+          </span>
+          <span className="lane-toggle-indicator" aria-hidden="true">
+            {collapsed ? "▶" : "▼"}
+          </span>
         </button>
 
-        {!collapsed &&
-          laneOrders.map((order) => {
-            if (isDisplay) {
+        {!collapsed
+          ? laneOrders.map((order) => {
+              const badge = <StatusBadge label={statusLabel(order.Status)} tone={statusTone(order.Status)} />;
+
+              if (isDisplay) {
+                return (
+                  <div key={order.OrderID} className="order-card" data-testid={`order-${order.OrderID}`}>
+                    <div className="order-card-header">
+                      <strong>Order #{order.OrderID}</strong>
+                      {badge}
+                    </div>
+                    {renderEmojiSummary(order.ItemStatusCounts)}
+                    <p className="muted">{formatTime(order.CreatedAt)}</p>
+                  </div>
+                );
+              }
+
+              const productionOrder = order as ProductionOrder;
               return (
-                <div key={order.OrderID} className="order-card" data-testid={`order-${order.OrderID}`}>
+                <button
+                  key={order.OrderID}
+                  type="button"
+                  className={`order-card${selectedOrderId === order.OrderID ? " selected" : ""}`}
+                  onClick={() => void loadDetail(order.OrderID)}
+                  data-testid={`order-${order.OrderID}`}
+                >
                   <div className="order-card-header">
                     <strong>Order #{order.OrderID}</strong>
+                    {badge}
                   </div>
+                  <p className="muted">{productionOrder.UserDisplayName ?? `User #${productionOrder.UserID}`}</p>
                   {renderEmojiSummary(order.ItemStatusCounts)}
                   <p className="muted">{formatTime(order.CreatedAt)}</p>
-                </div>
+                </button>
               );
-            }
-
-            const productionOrder = order as ProductionOrder;
-            return (
-              <button
-                key={order.OrderID}
-                type="button"
-                className={`order-card${selectedOrderId === order.OrderID ? " selected" : ""}`}
-                onClick={() => void loadDetail(order.OrderID)}
-                data-testid={`order-${order.OrderID}`}
-              >
-                <div className="order-card-header">
-                  <strong>Order #{order.OrderID}</strong>
-                </div>
-                <p className="muted">
-                  {productionOrder.UserDisplayName ?? `User #${productionOrder.UserID}`}
-                </p>
-                {renderEmojiSummary(order.ItemStatusCounts)}
-                <p className="muted">{formatTime(order.CreatedAt)}</p>
-              </button>
-            );
-          })}
+            })
+          : null}
       </section>
     );
   }
 
-  return (
-    <div className="app-container">
-      <header className="app-header">
-        <button
-          className="nav-toggle-btn action ghost"
-          onClick={() => setNavOpen((current) => !current)}
-          aria-label="Toggle Navigation"
-          type="button"
+  function renderInteractiveDetail() {
+    if (selectedOrderId === null) {
+      return (
+        <section className="detail-panel" aria-label="order detail" data-testid="order-detail">
+          <InfoCard title="Order detail" description="Select an order from a lane to inspect items and commands.">
+            <p className="muted">Select an order to view details.</p>
+          </InfoCard>
+        </section>
+      );
+    }
+
+    if (detailLoading) {
+      return (
+        <section className="detail-panel" aria-label="order detail" data-testid="order-detail">
+          <InfoCard title="Order detail" description="Loading the latest production information.">
+            <p className="muted">Loading order detail...</p>
+          </InfoCard>
+        </section>
+      );
+    }
+
+    if (detailError) {
+      return (
+        <section className="detail-panel" aria-label="order detail" data-testid="order-detail">
+          <InfoCard title="Order detail" description="The detail request failed.">
+            <p className="error-text">{detailError}</p>
+          </InfoCard>
+        </section>
+      );
+    }
+
+    if (!orderDetail) {
+      return null;
+    }
+
+    return (
+      <section className="detail-panel" aria-label="order detail" data-testid="order-detail">
+        <InfoCard
+          title={`Order #${orderDetail.order.OrderID}`}
+          description={`Customer: ${orderDetail.order.UserDisplayName ?? `User #${orderDetail.order.UserID}`}`}
         >
-          ☰
-        </button>
-        <h3>Staff Client</h3>
-      </header>
-
-      <div className="app-body">
-        {navOpen && (
-          <nav ref={navRef} className="app-nav">
-            <div className="nav-header">
-              <button
-                className="nav-close-btn action ghost"
-                onClick={() => setNavOpen(false)}
-                type="button"
-                aria-label="Close Navigation"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="nav-links">
-              <button
-                type="button"
-                className={`nav-link ${activeTab === "dashboard" ? "active" : ""}`}
-                onClick={() => setActiveTab("dashboard")}
-              >
-                Dashboard
-              </button>
-              <button
-                type="button"
-                className={`nav-link ${activeTab === "settings" ? "active" : ""}`}
-                onClick={() => setActiveTab("settings")}
-              >
-                Settings
-              </button>
-            </div>
-
-            <div className="nav-footer" data-testid="text-size-controls">
-              <p className="muted">Text size</p>
-              <div className="text-size-actions">
-                <button className={`action ghost${textSize === 1 ? " active-size" : ""}`} type="button" onClick={() => setSize(1)} aria-label="Set text size A">A</button>
-                <button className={`action ghost${textSize === 2 ? " active-size" : ""}`} type="button" onClick={() => setSize(2)} aria-label="Set text size A+">A+</button>
-                <button className={`action ghost${textSize === 3 ? " active-size" : ""}`} type="button" onClick={() => setSize(3)} aria-label="Set text size A++">A++</button>
-              </div>
-              {!isDisplay ? (
-                <button className="action ghost" type="button" onClick={resetAllState} aria-label="Logout" title="Logout">
-                  Logout
-                </button>
-              ) : (
-                <button className="action ghost" type="button" onClick={resetAllState} aria-label="Exit" title="Exit">
-                  Exit
-                </button>
-              )}
-            </div>
-          </nav>
-        )}
-
-        <main className="app-content-wrapper">
-          <div className="app-toolbar">
-            <div className="toolbar-left" />
-            <div className="toolbar-right">
-              {session && (
-                <span className="mode-chip" data-testid="mode-chip">
-                  Mode: {session.mode}
-                </span>
-              )}
-              {!isDisplay && session?.user && (
-                <span className="auth-info" data-testid="auth-status">
-                  Signed in as <strong>{displayUserName(session.user)}</strong>
-                </span>
-              )}
-              <button
-                className="refresh-control"
-                type="button"
-                onClick={() => session && void loadBoard(session.accessToken, session.mode as "interactive" | "display")}
-                disabled={boardLoading}
-                aria-label="Refresh"
-                title="Refresh"
-              >
-                🔄
-              </button>
-            </div>
+          <div className="detail-header">
+            <StatusBadge label={statusLabel(orderDetail.order.Status)} tone={statusTone(orderDetail.order.Status)} />
           </div>
+          {commandError ? <p className="error-text">{commandError}</p> : null}
+          <ul className="item-list">
+            {orderDetail.items.map((item) => {
+              const actions = getAllowedActions(item);
+              const isLoading = commandLoading === item.ID;
 
-          {activeTab === "settings" ? (
-            <section className="surface-card settings-view" aria-label="settings">
-              <h2>Settings</h2>
-              <p className="muted">Use text size controls and local QR access from the navigation menu.</p>
-            </section>
-          ) : (
-            <>
-        {boardLoading && !hasOrders && <p className="muted">Loading orders...</p>}
-        {boardError && <p className="error-text">{boardError}</p>}
+              return (
+                <li key={item.ID} className="item-row" data-testid={`item-${item.ID}`}>
+                  <div className="item-info">
+                    <strong>{item.MenuItemName}</strong>
+                    <span className="muted">
+                      L{item.LineNumber}U{item.UnitSequence}
+                    </span>
+                    <StatusBadge label={statusLabel(item.Status)} tone={statusTone(item.Status)} />
+                    {item.ClaimedByDisplayName ? (
+                      <span className="muted">Picked by: {item.ClaimedByDisplayName}</span>
+                    ) : null}
+                    {item.BlockedReason ? (
+                      <span className="muted blocked-reason">Reason: {item.BlockedReason}</span>
+                    ) : null}
+                  </div>
+                  <div className="item-actions">
+                    {actions.map((command) => (
+                      <ActionButton
+                        key={command}
+                        type="button"
+                        size="small"
+                        variant={command === "block" ? "outlined" : "contained"}
+                        tone={command === "block" ? "secondary" : "primary"}
+                        disabled={isLoading}
+                        onClick={() => void onItemCommand(item.ID, command)}
+                        data-testid={`${command}-${item.ID}`}
+                      >
+                        {command.charAt(0).toUpperCase() + command.slice(1)}
+                      </ActionButton>
+                    ))}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </InfoCard>
+      </section>
+    );
+  }
+
+  function renderBoardView() {
+    return (
+      <>
+        <div className="app-toolbar">
+          <div className="toolbar-left" />
+          <div className="toolbar-right">
+            {session ? (
+              <span data-testid="mode-chip">
+                <StatusBadge label={`Mode: ${session.mode}`} tone="info" />
+              </span>
+            ) : null}
+            {!isDisplay && session?.user ? (
+              <span className="auth-info" data-testid="auth-status">
+                Signed in as <strong>{displayUserName(session.user)}</strong>
+              </span>
+            ) : null}
+            <ActionButton
+              tone="neutral"
+              variant="outlined"
+              type="button"
+              onClick={() => session && void loadBoard(session.accessToken, session.mode as "interactive" | "display")}
+              disabled={boardLoading}
+              aria-label="Refresh"
+            >
+              Refresh
+            </ActionButton>
+          </div>
+        </div>
+
+        {boardLoading && !hasOrders ? <p className="muted">Loading orders...</p> : null}
+        {boardError ? <p className="error-text">{boardError}</p> : null}
 
         {isDisplay ? (
-          /* Display board: foldable lane columns, read-only */
           <div className="board-lanes" data-testid="order-list">
-            {LANE_DEFINITIONS.map(({ status, label }) => {
-              const laneOrders = sortOrdersForLane(currentOrders, status);
-              return renderLane(status, label, laneOrders);
-            })}
+            {LANE_DEFINITIONS.map(({ status, label }) =>
+              renderLane(status, label, sortOrdersForLane(currentOrders, status)),
+            )}
           </div>
         ) : (
-          /* Interactive board: foldable lane columns + detail rail */
           <div className="board-lanes-with-detail" data-testid="order-list">
-            {LANE_DEFINITIONS.map(({ status, label }) => {
-              const laneOrders = sortOrdersForLane(orders, status);
-              return renderLane(status, label, laneOrders);
-            })}
-
-            <section className="detail-panel" aria-label="order detail" data-testid="order-detail">
-              {selectedOrderId === null ? (
-                <p className="muted">Select an order to view details.</p>
-              ) : detailLoading ? (
-                <p className="muted">Loading order detail...</p>
-              ) : detailError ? (
-                <p className="error-text">{detailError}</p>
-              ) : orderDetail ? (
-                <>
-                  <div className="detail-header">
-                    <h2>Order #{orderDetail.order.OrderID}</h2>
-                    <span className={statusBadgeClass(orderDetail.order.Status)}>
-                      {orderDetail.order.Status.replace("_", " ")}
-                    </span>
-                  </div>
-                  <p className="muted">
-                    Customer: {orderDetail.order.UserDisplayName ?? `User #${orderDetail.order.UserID}`}
-                  </p>
-                  {commandError && <p className="error-text">{commandError}</p>}
-                  <ul className="item-list">
-                    {orderDetail.items.map((item) => {
-                      const actions = getAllowedActions(item);
-                      const isLoading = commandLoading === item.ID;
-                      return (
-                        <li key={item.ID} className="item-row" data-testid={`item-${item.ID}`}>
-                          <div className="item-info">
-                            <strong>{item.MenuItemName}</strong>
-                            <span className="muted">
-                              L{item.LineNumber}U{item.UnitSequence}
-                            </span>
-                            <span className={statusBadgeClass(item.Status)}>
-                              {item.Status.replace("_", " ")}
-                            </span>
-                            {item.ClaimedByDisplayName && (
-                              <span className="muted">Picked by: {item.ClaimedByDisplayName}</span>
-                            )}
-                            {item.BlockedReason && (
-                              <span className="muted blocked-reason">Reason: {item.BlockedReason}</span>
-                            )}
-                          </div>
-                          <div className="item-actions">
-                            {actions.map((cmd) => (
-                              <button
-                                key={cmd}
-                                className="action"
-                                type="button"
-                                disabled={isLoading}
-                                onClick={() => void onItemCommand(item.ID, cmd)}
-                                data-testid={`${cmd}-${item.ID}`}
-                              >
-                                {cmd.charAt(0).toUpperCase() + cmd.slice(1)}
-                              </button>
-                            ))}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </>
-              ) : null}
-            </section>
+            {LANE_DEFINITIONS.map(({ status, label }) =>
+              renderLane(status, label, sortOrdersForLane(orders, status)),
+            )}
+            {renderInteractiveDetail()}
           </div>
         )}
 
-        {!boardLoading && !hasOrders && !boardError && (
-          <p className="muted">No production orders.</p>
-        )}
-            </>
-          )}
-        </main>
-      </div>
-    </div>
+        {!boardLoading && !hasOrders && !boardError ? <p className="muted">No production orders.</p> : null}
+      </>
+    );
+  }
+
+  function renderDashboardContent() {
+    switch (view) {
+      case "landing":
+        return renderModeSelection();
+      case "interactive_credentials":
+        return renderCredentials();
+      case "display_loading":
+        return renderDisplayLoading();
+      default:
+        return renderBoardView();
+    }
+  }
+
+  return (
+    <AppShell
+      appTitle="Staff Client"
+      headerEyebrow="Agentic Restaurant"
+      navigationContentClassName="app-nav"
+      navigation={
+        <AppNavigationMenu
+          title="Staff Client"
+          subtitle={isBoardView ? (isDisplay ? "Display workspace" : "Kitchen workspace") : "Entry workspace"}
+          items={navigationItems}
+          footer={
+            isBoardView ? (
+              <>
+                <TextSizeControl value={textSize} onChange={setTextSize} testId="text-size-controls" />
+                <ActionButton
+                  tone="neutral"
+                  variant="outlined"
+                  type="button"
+                  onClick={resetAllState}
+                  aria-label={isDisplay ? "Exit" : "Logout"}
+                  title={isDisplay ? "Exit" : "Logout"}
+                >
+                  {isDisplay ? "Exit" : "Logout"}
+                </ActionButton>
+              </>
+            ) : undefined
+          }
+        />
+      }
+    >
+      {activeTab === "settings" ? renderSettingsView() : renderDashboardContent()}
+    </AppShell>
   );
 }

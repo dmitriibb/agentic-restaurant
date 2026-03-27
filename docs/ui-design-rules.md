@@ -22,5 +22,8 @@ When working on design of UI implementation these rules and concepts must be fol
 
 ## Rules
 
-- All applications should have similar design and look consistent, like it is from the sabe scosystem. Probably we can use some common libs with shared components
+- All applications should have similar design and look consistent, like it is from the sabe scosystem.
+- All shared React UI primitives, theme tokens, and app-shell layout components must live in `apps/ui-common-libs`.
+- `apps/ui-common-libs` is the default place to add shared buttons, cards, badges, form fields, and navigation shells before creating anything app-specific.
+- Web UI applications should consume the shared exports from `apps/ui-common-libs` instead of importing raw component-library primitives directly inside app code.
 

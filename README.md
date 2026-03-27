@@ -56,7 +56,7 @@ Prerequisites:
 
 - Docker + Docker Compose
 - Java 21 + Maven (for local non-container runs)
-- Node.js (for local `orders-client` development)
+- Node.js (for local web UI development, including `apps/ui-common-libs`)
 
 Run all services via Compose:
 
@@ -72,6 +72,12 @@ Then open:
 - Orders Swagger: `http://localhost:8083/swagger-ui.html`
 - Production health: `http://localhost:8084/health/ready`
 - RabbitMQ UI: `http://localhost:15672` (`guest` / `guest`)
+
+## Shared UI Library
+
+- Shared React components and theme tokens now live in `apps/ui-common-libs`.
+- The package wraps Material UI behind repository-approved primitives so `orders-client`, `staff-client`, and future web UIs can stay visually consistent.
+- When a web UI needs a new button, card, form field, badge, or layout shell, add it to `apps/ui-common-libs` first and consume it from there rather than creating app-local variants.
 
 ## Production Pipeline Validation
 
