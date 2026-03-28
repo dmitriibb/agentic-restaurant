@@ -570,15 +570,9 @@ export function App() {
   function renderSettingsView() {
     return (
       <section className="settings-view" aria-label="settings">
-        <InfoCard title="Settings" description="Shared UI controls for readability and device setup.">
-          <TextSizeControl value={textSize} onChange={setTextSize} />
-          {!isBoardView ? (
-            <p className="muted">Choose a workspace mode from the dashboard when you are ready.</p>
-          ) : (
-            <p className="muted">
-              These controls use the same shared components that will be reused across other web apps.
-            </p>
-          )}
+        <InfoCard title="Settings" description="Shared controls now live in the navigation drawer for faster access.">
+          <p className="muted">Use the text size controls pinned to the bottom of the navigation menu.</p>
+          {!isBoardView ? <p className="muted">Choose a workspace mode from the dashboard when you are ready.</p> : null}
         </InfoCard>
       </section>
     );
@@ -811,21 +805,23 @@ export function App() {
           subtitle={isBoardView ? (isDisplay ? "Display workspace" : "Kitchen workspace") : "Entry workspace"}
           items={navigationItems}
           footer={
-            isBoardView ? (
-              <>
-                <TextSizeControl value={textSize} onChange={setTextSize} testId="text-size-controls" />
-                <ActionButton
-                  tone="neutral"
-                  variant="outlined"
-                  type="button"
-                  onClick={resetAllState}
-                  aria-label={isDisplay ? "Exit" : "Logout"}
-                  title={isDisplay ? "Exit" : "Logout"}
-                >
-                  {isDisplay ? "Exit" : "Logout"}
-                </ActionButton>
-              </>
-            ) : undefined
+            <>
+              <TextSizeControl value={textSize} onChange={setTextSize} testId="text-size-controls" />
+              {isBoardView ? (
+                <>
+                  <ActionButton
+                    tone="neutral"
+                    variant="outlined"
+                    type="button"
+                    onClick={resetAllState}
+                    aria-label={isDisplay ? "Exit" : "Logout"}
+                    title={isDisplay ? "Exit" : "Logout"}
+                  >
+                    {isDisplay ? "Exit" : "Logout"}
+                  </ActionButton>
+                </>
+              ) : null}
+            </>
           }
         />
       }

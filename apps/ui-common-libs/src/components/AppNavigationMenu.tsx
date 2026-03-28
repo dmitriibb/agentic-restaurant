@@ -30,7 +30,7 @@ export function AppNavigationMenu({
   subtitle = "Shared navigation"
 }: AppNavigationMenuProps) {
   return (
-    <Stack className={className} sx={{ height: "100%", gap: 2 }}>
+    <Stack className={className} sx={{ height: "100%", gap: 2, minHeight: 0 }}>
       <Stack spacing={0.5}>
         <Typography variant="overline" color="text.secondary">
           {subtitle}
@@ -38,7 +38,7 @@ export function AppNavigationMenu({
         <Typography variant="h6">{title}</Typography>
       </Stack>
 
-      <List sx={{ p: 0, display: "grid", gap: 0.5, flex: 1 }}>
+      <List sx={{ p: 0, display: "flex", flexDirection: "column", gap: 0.75, flex: 1, justifyContent: "flex-start" }}>
         {items.map((item) => (
           <ListItemButton
             key={item.id}
@@ -46,15 +46,22 @@ export function AppNavigationMenu({
             onClick={item.onClick}
             disabled={item.disabled}
             sx={{
-              borderRadius: 3,
+              borderRadius: 2.5,
               border: "1px solid",
               borderColor: item.active ? "primary.light" : "divider",
-              backgroundColor: item.active ? "rgba(143, 45, 31, 0.08)" : "transparent"
+              backgroundColor: item.active ? "rgba(143, 45, 31, 0.08)" : "transparent",
+              flex: "0 0 auto",
+              flexGrow: 0,
+              minHeight: 48,
+              maxHeight: 48,
+              px: 1.5,
+              py: 0.75,
+              alignItems: "center"
             }}
           >
             <ListItemText
               primary={item.label}
-              primaryTypographyProps={{ fontWeight: item.active ? 700 : 600 }}
+              primaryTypographyProps={{ fontWeight: item.active ? 700 : 600, fontSize: "0.95rem" }}
             />
           </ListItemButton>
         ))}
@@ -63,7 +70,7 @@ export function AppNavigationMenu({
       {footer ? (
         <>
           <Divider />
-          <Stack spacing={1.25}>{footer}</Stack>
+          <Stack spacing={1.25} sx={{ mt: "auto", pb: 0.5 }}>{footer}</Stack>
         </>
       ) : null}
     </Stack>

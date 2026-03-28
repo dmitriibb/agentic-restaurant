@@ -5,22 +5,33 @@ import react from "@vitejs/plugin-react";
 
 const appNodeModules = path.resolve(__dirname, "node_modules");
 const workspaceNodeModules = path.resolve(__dirname, "../../node_modules");
-const resolvedNodeModules = fs.existsSync(appNodeModules) ? appNodeModules : workspaceNodeModules;
+const uiCommonLibsSource = path.resolve(__dirname, "../ui-common-libs/src/index.ts");
+const resolvedNodeModules = fs.existsSync(path.resolve(appNodeModules, "react/package.json"))
+  ? appNodeModules
+  : workspaceNodeModules;
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      react: path.resolve(resolvedNodeModules, "react"),
-      "react-dom": path.resolve(resolvedNodeModules, "react-dom"),
-      "@mui/material": path.resolve(resolvedNodeModules, "@mui/material"),
-      "@mui/icons-material": path.resolve(resolvedNodeModules, "@mui/icons-material"),
-      "@emotion/react": path.resolve(resolvedNodeModules, "@emotion/react"),
-      "@emotion/styled": path.resolve(resolvedNodeModules, "@emotion/styled"),
-      "@fontsource/manrope": path.resolve(resolvedNodeModules, "@fontsource/manrope")
-    },
+    alias: [
+      { find: "@agentic-restaurant/ui-common-libs", replacement: uiCommonLibsSource },
+      { find: "react/jsx-runtime", replacement: path.resolve(resolvedNodeModules, "react/jsx-runtime.js") },
+      { find: "react/jsx-dev-runtime", replacement: path.resolve(resolvedNodeModules, "react/jsx-dev-runtime.js") },
+      { find: "react", replacement: path.resolve(resolvedNodeModules, "react") },
+      { find: "react-dom", replacement: path.resolve(resolvedNodeModules, "react-dom") },
+      { find: "@mui/material", replacement: path.resolve(resolvedNodeModules, "@mui/material") },
+      { find: "@mui/icons-material", replacement: path.resolve(resolvedNodeModules, "@mui/icons-material") },
+      { find: "@emotion/react", replacement: path.resolve(resolvedNodeModules, "@emotion/react") },
+      { find: "@emotion/styled", replacement: path.resolve(resolvedNodeModules, "@emotion/styled") },
+      { find: "@fontsource/manrope", replacement: path.resolve(resolvedNodeModules, "@fontsource/manrope") }
+    ],
     preserveSymlinks: true,
     dedupe: ["react", "react-dom"]
+  },
+  server: {
+    fs: {
+      allow: [path.resolve(__dirname, "..")]
+    }
   },
   test: {
     environment: "jsdom",
