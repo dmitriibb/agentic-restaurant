@@ -249,7 +249,8 @@ services:
 
   orders-client:
     build:
-      context: ./apps/orders-client
+      context: .
+      dockerfile: ./apps/orders-client/Dockerfile
       args:
         VITE_LOCAL_IP: ${LOCAL_IP:-}
     container_name: restaurant-orders-client
@@ -272,7 +273,8 @@ services:
 
   staff-client:
     build:
-      context: ./apps/staff-client
+      context: .
+      dockerfile: ./apps/staff-client/Dockerfile
       args:
         VITE_LOCAL_IP: ${LOCAL_IP:-}
     container_name: restaurant-staff-client
