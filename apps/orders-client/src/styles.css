@@ -30,8 +30,8 @@ body {
 
 .entry-stack {
   display: grid;
-  gap: 2rem;
-  width: min(760px, 100%);
+  gap: var(--app-stack-gap);
+  width: min(var(--app-max-entry-width), 100%);
 }
 
 .entry-card,
@@ -50,9 +50,9 @@ body {
 .qr-box {
   display: inline-flex;
   background: #ffffff;
-  padding: 0.75rem;
-  border-radius: 18px;
-  border: 1px solid #e5d8ca;
+  padding: var(--app-control-gap);
+  border-radius: var(--app-card-radius);
+  border: 1px solid var(--app-card-border);
 }
 
 .qr-url {
@@ -61,7 +61,7 @@ body {
 
 .qr-edit {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--app-control-gap);
 }
 
 .auth-form {
@@ -71,7 +71,7 @@ body {
 
 .auth-form-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--app-control-gap);
   justify-content: flex-end;
   flex-wrap: wrap;
 }
@@ -81,14 +81,14 @@ body {
   justify-content: space-between;
   align-items: center;
   min-height: 48px;
-  gap: 1rem;
+  gap: var(--app-toolbar-gap);
 }
 
 .toolbar-left,
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--app-control-gap);
   flex-wrap: wrap;
 }
 
@@ -99,7 +99,7 @@ body {
 .commerce-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-  gap: 1rem;
+  gap: var(--app-grid-gap);
   align-items: start;
 }
 
@@ -109,7 +109,7 @@ body {
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 0.85rem;
+  gap: var(--app-section-gap);
 }
 
 .catalog-item,
@@ -117,11 +117,11 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: var(--app-toolbar-gap);
   padding: 0.95rem;
-  border: 1px solid #e5d8ca;
-  border-radius: 18px;
-  background: #fffdf9;
+  border: 1px solid var(--app-card-border);
+  border-radius: var(--app-card-radius);
+  background: var(--app-card-surface);
 }
 
 .catalog-item-copy {
@@ -142,7 +142,7 @@ body {
 .qty-controls {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--app-control-gap);
   flex-shrink: 0;
 }
 
@@ -150,10 +150,10 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: var(--app-toolbar-gap);
   flex-wrap: wrap;
   padding-top: 1rem;
-  border-top: 1px solid #e5d8ca;
+  border-top: 1px solid var(--app-card-border);
 }
 
 .checkout-row p {
@@ -165,9 +165,9 @@ body {
   gap: 0.35rem;
   margin-top: 0.5rem;
   padding: 1rem;
-  background: #eff7f1;
-  border: 1px solid #d4e6d6;
-  border-radius: 18px;
+  background: var(--app-success-surface);
+  border: 1px solid var(--app-success-border);
+  border-radius: var(--app-card-radius);
 }
 
 .status-panel p {

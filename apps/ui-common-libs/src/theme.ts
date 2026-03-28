@@ -66,6 +66,26 @@ export const restaurantUiTheme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        ":root": {
+          "--app-content-gap": "1rem",
+          "--app-content-gap-compact": "0.75rem",
+          "--app-section-gap": "0.75rem",
+          "--app-stack-gap": "2rem",
+          "--app-toolbar-gap": "1rem",
+          "--app-control-gap": "0.75rem",
+          "--app-grid-gap": "1rem",
+          "--app-card-padding": "1rem",
+          "--app-card-padding-compact": "0.85rem",
+          "--app-card-radius": "18px",
+          "--app-card-radius-tight": "16px",
+          "--app-card-border": "#e5d8ca",
+          "--app-card-surface": "#fffdf9",
+          "--app-card-surface-alt": "#fffaf5",
+          "--app-success-surface": "#eff7f1",
+          "--app-success-border": "#d4e6d6",
+          "--app-max-entry-width": "760px",
+          "--app-max-detail-width": "520px"
+        },
         body: {
           background: "radial-gradient(circle at top, rgba(201, 139, 44, 0.14), transparent 32%), #f6f1ea"
         }
