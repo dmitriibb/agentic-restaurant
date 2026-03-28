@@ -1,0 +1,16 @@
+{
+  "name": "agentic-restaurant-workspace",
+  "private": true,
+  "workspaces": [
+    "apps/orders-client",
+    "apps/staff-client",
+    "apps/ui-common-libs"
+  ],
+  "scripts": {
+    "build:frontend": "npm run build --workspace @agentic-restaurant/ui-common-libs && npm run build --workspace orders-client && npm run build --workspace staff-client",
+    "test:frontend": "npm run test --workspace @agentic-restaurant/ui-common-libs && npm run test --workspace orders-client && npm run test --workspace staff-client",
+    "dev:orders-client": "npm run dev --workspace orders-client",
+    "dev:staff-client": "npm run dev --workspace staff-client",
+    "dev:ui-common-libs": "npm run dev --workspace @agentic-restaurant/ui-common-libs"
+  }
+}

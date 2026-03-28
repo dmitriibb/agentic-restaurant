@@ -8,14 +8,20 @@ Create `.env` from `.env.example` when overriding local defaults.
 
 ## Local Run
 
-1. Install dependencies:
+1. Install frontend workspace dependencies from the repository root:
    - `npm install`
 2. Start dev server:
-   - `npm run dev`
+   - `npm run dev:orders-client`
 3. Run tests:
-   - `npm test`
+   - `npm run test --workspace orders-client`
 4. Build for production:
-   - `npm run build`
+   - `npm run build --workspace orders-client`
+
+## Workspace Notes
+
+- This app is part of the repository npm workspace declared in the root `package.json`.
+- Install dependencies from the repository root, not from this folder.
+- Shared UI packages are linked locally by the workspace manager during development.
 
 Default dev URL: `http://localhost:5173`
 

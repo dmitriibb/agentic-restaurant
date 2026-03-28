@@ -2,14 +2,30 @@
 set -euo pipefail
 
 # ── run.sh — build & start every service with one command ──
+LOCAL_IP=""
 if command -v ip >/dev/null 2>&1; then
-  export LOCAL_IP=$(ip -4 addr show scope global | grep inet | head -n1 | awk '{print $2}' | cut -d/ -f1)
-elif command -v hostname >/dev/null 2>&1; then
-  export LOCAL_IP=$(hostname -I | awk '{print $1}')
-else
-  export LOCAL_IP="localhost"
+  LOCAL_IP=$(ip -4 -o addr show scope global up | awk '{split($4, parts, "/"); print parts[1]; exit}')
 fi
+
+if [[ -z "$LOCAL_IP" ]] && command -v hostname >/dev/null 2>&1; then
+  LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+fi
+
+export LOCAL_IP="${LOCAL_IP:-localhost}"
 COMPOSE_FILE="docker-compose.yml"
+
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_CMD=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_CMD=(docker-compose)
+else
+  echo "Docker Compose is not installed. Install Docker Compose v2 or the docker-compose CLI." >&2
+  exit 1
+fi
+
+compose() {
+  "${COMPOSE_CMD[@]}" -f "$COMPOSE_FILE" "$@"
+}
 
 usage() {
   echo "Usage: ./run.sh [command]"
@@ -27,7 +43,7 @@ usage() {
 case "${1:-up}" in
   up)
     echo "▸ Building and starting all services …"
-    docker compose -f "$COMPOSE_FILE" up --build -d
+    compose up --build -d
     echo ""
     echo "✔ All services starting. Access the app at http://localhost"
     echo "  Swagger UIs:"
@@ -39,26 +55,26 @@ case "${1:-up}" in
     ;;
   build)
     echo "▸ Building all images …"
-    docker compose -f "$COMPOSE_FILE" build
+    compose build
     ;;
   down)
     echo "▸ Stopping all services …"
-    docker compose -f "$COMPOSE_FILE" down
+    compose down
     ;;
   restart)
     echo "▸ Restarting all services …"
-    docker compose -f "$COMPOSE_FILE" down
-    docker compose -f "$COMPOSE_FILE" up --build -d
+    compose down
+    compose up --build -d
     ;;
   logs)
-    docker compose -f "$COMPOSE_FILE" logs -f
+    compose logs -f
     ;;
   ps)
-    docker compose -f "$COMPOSE_FILE" ps
+    compose ps
     ;;
   clean)
     echo "▸ Stopping services and removing volumes (database data will be lost) …"
-    docker compose -f "$COMPOSE_FILE" down -v
+    compose down -v
     ;;
   *)
     usage

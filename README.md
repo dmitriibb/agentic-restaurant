@@ -56,7 +56,29 @@ Prerequisites:
 
 - Docker + Docker Compose
 - Java 21 + Maven (for local non-container runs)
-- Node.js (for local web UI development, including `apps/ui-common-libs`)
+- Node.js 20+ with npm workspaces support (for local web UI development, including `apps/ui-common-libs`)
+
+## Frontend Workspace Setup
+
+The frontend packages now use npm workspaces from the repository root:
+
+- `apps/orders-client`
+- `apps/staff-client`
+- `apps/ui-common-libs`
+
+Install frontend dependencies once from the repository root:
+
+- `npm install`
+
+Common frontend commands from the repository root:
+
+- `npm run build:frontend`
+- `npm run test:frontend`
+- `npm run dev:orders-client`
+- `npm run dev:staff-client`
+- `npm run dev:ui-common-libs`
+
+Workspace packages are linked locally inside the monorepo. Shared library builds stay under `apps/ui-common-libs/dist` rather than being published to a global npm location during normal local development.
 
 Run all services via Compose:
 

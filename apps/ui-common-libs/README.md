@@ -28,10 +28,17 @@ Shared React component library for the web UI applications in this repository.
 
 ## Local development
 
-1. Add the package to an app with `"@agentic-restaurant/ui-common-libs": "file:../ui-common-libs"`.
-2. Run `npm install` in that app.
-3. Wrap the app root with `RestaurantUiProvider`.
-4. Replace app-local primitives with shared exports from this package.
+1. Declare the dependency from another workspace app with the local package version, for example `"@agentic-restaurant/ui-common-libs": "0.0.1"`.
+2. Run `npm install` from the repository root.
+3. Build or watch this package from the repository root with `npm run dev:ui-common-libs` or `npm run build --workspace @agentic-restaurant/ui-common-libs`.
+4. Wrap the app root with `RestaurantUiProvider`.
+5. Replace app-local primitives with shared exports from this package.
+
+## Workspace artifact model
+
+- Local development uses npm workspace linking instead of a global npm install.
+- Built output is written to `apps/ui-common-libs/dist`.
+- Package versions stay whatever is declared in `package.json` until you change them explicitly.
 
 ## Build and test
 

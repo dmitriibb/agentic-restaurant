@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@agentic-restaurant/ui-common-libs": "file:../ui-common-libs",
+    "@agentic-restaurant/ui-common-libs": "0.0.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@fontsource/manrope": "^5.1.1",

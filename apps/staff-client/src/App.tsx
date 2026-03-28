@@ -11,7 +11,14 @@ import {
   type StatusBadgeTone,
   type TextSizeValue,
 } from "@agentic-restaurant/ui-common-libs";
-import { useEffect, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FocusEvent,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { login, type UserSummary } from "./features/auth/api";
 import { clearDisplayToken, getDisplayToken } from "./features/auth/appToken";
@@ -237,13 +244,12 @@ function LocalAccessQR({ hidden }: { hidden: boolean }) {
             label="Local IP"
             placeholder="192.168.1.100"
             defaultValue={defaultIp}
-            onKeyDown={(event) => {
+            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
               if (event.key === "Enter") {
-                const input = event.target as HTMLInputElement;
-                setIpValue(input.value);
+                setIpValue(event.currentTarget.value);
               }
             }}
-            onBlur={(event) => setIpValue(event.target.value)}
+            onBlur={(event: FocusEvent<HTMLInputElement>) => setIpValue(event.currentTarget.value)}
           />
         </div>
       )}
@@ -508,7 +514,7 @@ export function App() {
               <FormTextField
                 label="Login"
                 value={loginValue}
-                onChange={(event) => setLoginValue(event.target.value)}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => setLoginValue(event.currentTarget.value)}
                 autoComplete="username"
                 required
               />
@@ -516,7 +522,7 @@ export function App() {
                 label="Password"
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => setPassword(event.currentTarget.value)}
                 autoComplete="current-password"
                 required
               />
