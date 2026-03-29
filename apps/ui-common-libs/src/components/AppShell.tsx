@@ -15,16 +15,43 @@ const DRAWER_WIDTH = 280;
 const TABLET_MIN_WIDTH = 600;
 const DESKTOP_MIN_WIDTH = 1200;
 
-function readViewportWidth(): number {
+type Viewport = {
+  width: number;
+  height: number;
+};
+
+function readViewport(): Viewport {
   if (typeof window === "undefined") {
-    return DESKTOP_MIN_WIDTH;
+    return {
+      width: DESKTOP_MIN_WIDTH,
+      height: 800
+    };
   }
 
-  return window.innerWidth;
+  return {
+    width: window.innerWidth,
+    height: window.innerHeight
+  };
+}
+
+function isLandscapeViewport(viewport: Viewport): boolean {
+  return viewport.width >= viewport.height;
+}
+
+function hasTabletSizedShortestSide(viewport: Viewport): boolean {
+  return Math.min(viewport.width, viewport.height) >= TABLET_MIN_WIDTH;
+}
+
+function usesSideNavigation(viewport: Viewport): boolean {
+  return viewport.width >= DESKTOP_MIN_WIDTH || (hasTabletSizedShortestSide(viewport) && isLandscapeViewport(viewport));
+}
+
+function usesTopNavigation(viewport: Viewport): boolean {
+  return viewport.width < DESKTOP_MIN_WIDTH && hasTabletSizedShortestSide(viewport) && !isLandscapeViewport(viewport);
 }
 
 export type AppShellProps = PropsWithChildren<{
-  appTitle: string;
+  appTitle?: string;
   navigation: ReactNode;
   headerActions?: ReactNode;
   footer?: ReactNode;
@@ -39,19 +66,20 @@ export function AppShell({
   headerActions,
   footer,
   defaultNavigationOpen = true,
-  headerEyebrow = "Agentic Restaurant",
+  headerEyebrow,
   navigationContentClassName,
   children
 }: AppShellProps) {
-  const [viewportWidth, setViewportWidth] = useState(readViewportWidth);
-  const isDesktop = viewportWidth >= DESKTOP_MIN_WIDTH;
-  const isTablet = viewportWidth >= TABLET_MIN_WIDTH && viewportWidth < DESKTOP_MIN_WIDTH;
-  const [navigationOpen, setNavigationOpen] = useState(() => defaultNavigationOpen && readViewportWidth() >= DESKTOP_MIN_WIDTH);
+  const [viewport, setViewport] = useState(readViewport);
+  const isSideNavigation = usesSideNavigation(viewport);
+  const isTopNavigation = usesTopNavigation(viewport);
+  const isOverlayNavigation = !isSideNavigation && !isTopNavigation;
+  const [navigationOpen, setNavigationOpen] = useState(() => defaultNavigationOpen && usesSideNavigation(readViewport()));
   const navigationContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     function handleResize() {
-      setViewportWidth(readViewportWidth());
+      setViewport(readViewport());
     }
 
     window.addEventListener("resize", handleResize);
@@ -59,16 +87,16 @@ export function AppShell({
   }, []);
 
   useEffect(() => {
-    if (isDesktop) {
+    if (isSideNavigation) {
       setNavigationOpen(defaultNavigationOpen);
       return;
     }
 
     setNavigationOpen(false);
-  }, [defaultNavigationOpen, isDesktop, isTablet]);
+  }, [defaultNavigationOpen, isSideNavigation]);
 
   useEffect(() => {
-    if (isDesktop || isTablet || !navigationOpen) {
+    if (!isOverlayNavigation || !navigationOpen) {
       return;
     }
 
@@ -91,13 +119,13 @@ export function AppShell({
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isDesktop, isTablet, navigationOpen]);
+  }, [isOverlayNavigation, navigationOpen]);
 
   const toggleNavigation = () => {
     setNavigationOpen((value) => !value);
   };
 
-  const permanentRail = isDesktop ? (
+  const permanentRail = isSideNavigation ? (
     <Drawer
       open={navigationOpen}
       variant="persistent"
@@ -114,18 +142,25 @@ export function AppShell({
         }
       }}
     >
-      <Box component="nav" ref={navigationContentRef} className={navigationContentClassName} sx={{ mt: 8, height: "100%" }}>
+      <Box
+        component="nav"
+        ref={navigationContentRef}
+        className={navigationContentClassName}
+        data-navigation-layout="side"
+        sx={{ mt: 8, height: "100%" }}
+      >
         {navigation}
       </Box>
     </Drawer>
   ) : null;
 
-  const topNavigation = isTablet ? (
+  const topNavigation = isTopNavigation ? (
     <Collapse in={navigationOpen}>
       <Box
         component="nav"
         ref={navigationContentRef}
         className={navigationContentClassName}
+        data-navigation-layout="top"
         sx={{
           borderBottom: "1px solid",
           borderColor: "divider",
@@ -143,11 +178,11 @@ export function AppShell({
     <Box sx={{ minHeight: "100vh", display: "flex", backgroundColor: "background.default" }}>
       {permanentRail}
       <Drawer
-        open={!isDesktop && !isTablet && navigationOpen}
+        open={isOverlayNavigation && navigationOpen}
         onClose={() => setNavigationOpen(false)}
         variant="temporary"
         sx={{
-          display: isDesktop || isTablet ? "none" : "block",
+          display: isOverlayNavigation ? "block" : "none",
           "& .MuiDrawer-paper": {
             width: DRAWER_WIDTH,
             boxSizing: "border-box",
@@ -156,7 +191,13 @@ export function AppShell({
           }
         }}
       >
-        <Box component="nav" ref={navigationContentRef} className={navigationContentClassName} sx={{ mt: 2, height: "100%" }}>
+        <Box
+          component="nav"
+          ref={navigationContentRef}
+          className={navigationContentClassName}
+          data-navigation-layout="overlay"
+          sx={{ mt: 2, height: "100%" }}
+        >
           {navigation}
         </Box>
       </Drawer>
@@ -174,12 +215,16 @@ export function AppShell({
               <MenuRoundedIcon />
             </IconButton>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-                {headerEyebrow}
-              </Typography>
-              <Typography variant="h6" sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {appTitle}
-              </Typography>
+              {headerEyebrow ? (
+                <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
+                  {headerEyebrow}
+                </Typography>
+              ) : null}
+              {appTitle ? (
+                <Typography variant="h6" sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {appTitle}
+                </Typography>
+              ) : null}
             </Box>
             {headerActions ? <Stack direction="row" spacing={1.25}>{headerActions}</Stack> : null}
           </Toolbar>

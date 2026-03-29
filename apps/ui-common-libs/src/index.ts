@@ -6,5 +6,6 @@ export { AppShell, type AppShellProps } from "./components/AppShell";
 export { ChoiceCard, type ChoiceCardProps, type ChoiceCardTone } from "./components/ChoiceCard";
 export { FormTextField } from "./components/FormTextField";
 export { InfoCard, type InfoCardProps } from "./components/InfoCard";
+export { LocalNetworkQrCode, type LocalNetworkQrCodeProps } from "./components/LocalNetworkQrCode";
 export { StatusBadge, type StatusBadgeProps, type StatusBadgeTone } from "./components/StatusBadge";
 export { TextSizeControl, type TextSizeControlProps, type TextSizeValue } from "./components/TextSizeControl";

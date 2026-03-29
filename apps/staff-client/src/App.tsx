@@ -5,6 +5,7 @@ import {
   ChoiceCard,
   FormTextField,
   InfoCard,
+  LocalNetworkQrCode,
   StatusBadge,
   TextSizeControl,
   type AppNavigationMenuItem,
@@ -15,11 +16,8 @@ import {
   useEffect,
   useState,
   type ChangeEvent,
-  type FocusEvent,
   type FormEvent,
-  type KeyboardEvent,
 } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import { login, type UserSummary } from "./features/auth/api";
 import { clearDisplayToken, getDisplayToken } from "./features/auth/appToken";
 import {
@@ -193,67 +191,6 @@ function sortOrdersForLane(
 
   return [...filtered].sort(
     (left, right) => new Date(left.CreatedAt).getTime() - new Date(right.CreatedAt).getTime(),
-  );
-}
-
-function LocalAccessQR({ hidden }: { hidden: boolean }) {
-  if (hidden) {
-    return null;
-  }
-
-  const defaultIp = import.meta.env.VITE_LOCAL_IP || "";
-  const [ipValue, setIpValue] = useState(defaultIp);
-  const isLocalhost =
-    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-
-  useEffect(() => {
-    if (!isLocalhost) {
-      setIpValue(window.location.hostname);
-    } else if (defaultIp && !ipValue) {
-      setIpValue(defaultIp);
-    }
-  }, [defaultIp, ipValue, isLocalhost]);
-
-  const displayUrl = ipValue
-    ? `${window.location.protocol}//${ipValue}${window.location.port ? `:${window.location.port}` : ""}`
-    : "";
-
-  return (
-    <InfoCard
-      title="Local Network Access"
-      description="Generate a QR code so kitchen devices on your local network can open this client."
-    >
-      {ipValue ? (
-        <>
-          <div className="qr-box">
-            <QRCodeSVG value={displayUrl} size={150} />
-          </div>
-          <p className="muted qr-url">{displayUrl}</p>
-          {isLocalhost ? (
-            <ActionButton tone="neutral" variant="outlined" type="button" onClick={() => setIpValue("")}>
-              Edit IP
-            </ActionButton>
-          ) : null}
-        </>
-      ) : (
-        <div className="qr-edit">
-          <p className="muted">
-            Enter your local IP, for example 192.168.1.100, to generate a QR code for mobile testing.
-          </p>
-          <FormTextField
-            label="Local IP"
-            placeholder="192.168.1.100"
-            defaultValue={defaultIp}
-            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-              if (event.key === "Enter") {
-                setIpValue(event.currentTarget.value);
-              }
-            }}
-            onBlur={(event: FocusEvent<HTMLInputElement>) => setIpValue(event.currentTarget.value)}
-          />
-        </div>
-      )}
-    </InfoCard>
   );
 }
 
@@ -499,7 +436,7 @@ export function App() {
               />
             </div>
           </section>
-          <LocalAccessQR hidden={isMobileViewport} />
+          <LocalNetworkQrCode hidden={isMobileViewport} localIp={import.meta.env.VITE_LOCAL_IP} />
         </div>
       </section>
     );
@@ -796,13 +733,9 @@ export function App() {
 
   return (
     <AppShell
-      appTitle="Staff Client"
-      headerEyebrow="Agentic Restaurant"
       navigationContentClassName="app-nav"
       navigation={
         <AppNavigationMenu
-          title="Staff Client"
-          subtitle={isBoardView ? (isDisplay ? "Display workspace" : "Kitchen workspace") : "Entry workspace"}
           items={navigationItems}
           footer={
             <>

@@ -678,26 +678,26 @@ describe("Staff client — state machine flows", () => {
 
     setViewport(1280);
     const desktopRender = render(<App />);
-    expect(screen.getByText("Local Network Access")).toBeInTheDocument();
+    expect(screen.getByText("ip address is not set - can't display QR code")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("mode-interactive"));
     await screen.findByLabelText("Login");
-    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
+    expect(screen.queryByText("ip address is not set - can't display QR code")).not.toBeInTheDocument();
     desktopRender.unmount();
 
     setViewport(768);
     const tabletRender = render(<App />);
-    expect(screen.getByText("Local Network Access")).toBeInTheDocument();
+    expect(screen.getByText("ip address is not set - can't display QR code")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("mode-interactive"));
     await screen.findByLabelText("Login");
-    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
+    expect(screen.queryByText("ip address is not set - can't display QR code")).not.toBeInTheDocument();
     tabletRender.unmount();
 
     setViewport(390);
     const mobileRender = render(<App />);
-    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
+    expect(screen.queryByText("ip address is not set - can't display QR code")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("mode-interactive"));
     await screen.findByLabelText("Login");
-    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
+    expect(screen.queryByText("ip address is not set - can't display QR code")).not.toBeInTheDocument();
     mobileRender.unmount();
 
     setViewport(1280);
@@ -705,7 +705,7 @@ describe("Staff client — state machine flows", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse([SAMPLE_ORDER])));
     render(<App />);
     await screen.findByTestId("order-9100");
-    expect(screen.queryByText("Local Network Access")).not.toBeInTheDocument();
+    expect(screen.queryByText("ip address is not set - can't display QR code")).not.toBeInTheDocument();
   });
 
   it("keeps navigation open by default on desktop like orders-client", async () => {

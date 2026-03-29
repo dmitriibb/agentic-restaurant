@@ -26,17 +26,21 @@ export function AppNavigationMenu({
   items,
   footer,
   className,
-  title = "Workspace",
-  subtitle = "Shared navigation"
+  title,
+  subtitle
 }: AppNavigationMenuProps) {
   return (
     <Stack className={className} sx={{ height: "100%", gap: 2, minHeight: 0 }}>
-      <Stack spacing={0.5}>
-        <Typography variant="overline" color="text.secondary">
-          {subtitle}
-        </Typography>
-        <Typography variant="h6">{title}</Typography>
-      </Stack>
+      {title || subtitle ? (
+        <Stack spacing={0.5}>
+          {subtitle ? (
+            <Typography variant="overline" color="text.secondary">
+              {subtitle}
+            </Typography>
+          ) : null}
+          {title ? <Typography variant="h6">{title}</Typography> : null}
+        </Stack>
+      ) : null}
 
       <List sx={{ p: 0, display: "flex", flexDirection: "column", gap: 0.75, flex: 1, justifyContent: "flex-start" }}>
         {items.map((item) => (
