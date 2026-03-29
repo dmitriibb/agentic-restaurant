@@ -47,23 +47,6 @@ body {
   gap: 1rem;
 }
 
-.qr-box {
-  display: inline-flex;
-  background: #ffffff;
-  padding: var(--app-control-gap);
-  border-radius: var(--app-card-radius);
-  border: 1px solid var(--app-card-border);
-}
-
-.qr-url {
-  word-break: break-all;
-}
-
-.qr-edit {
-  display: grid;
-  gap: var(--app-control-gap);
-}
-
 .auth-form {
   display: grid;
   gap: 0.9rem;

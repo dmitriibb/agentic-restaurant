@@ -18,8 +18,11 @@ describe("Orders client flows", () => {
 
     render(<App />);
 
-    expect(screen.getByRole("button", { name: /Registered User/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Registered user/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Guest\b/i })).toBeInTheDocument();
+    expect(screen.getByText("ip address is not set - can't display QR code")).toBeInTheDocument();
+    expect(screen.queryByText("Sign in with an existing account to browse the menu and place an order.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Start a temporary guest session and send an order without creating a full account.")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Menu" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Basket + Checkout" })).not.toBeInTheDocument();
   });
