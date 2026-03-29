@@ -57,6 +57,7 @@ Prerequisites:
 - Docker + Docker Compose
 - Java 21 + Maven (for local non-container runs)
 - Node.js 20+ with npm workspaces support (for local web UI development, including `apps/ui-common-libs`)
+- GitHub CLI (`gh`) if you use HTTPS remotes and want shared GitHub authentication across local repositories
 
 ## Frontend Workspace Setup
 
